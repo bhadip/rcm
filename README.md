@@ -8,6 +8,8 @@ A secure, offline-capable Reliability-Centered Maintenance (RCM) dashboard desig
 - **Interactive P&ID Diagram**: SVG overlay allows precise clicking of components (ESDV-101, V-101, GT-101, etc.).
 - **Dynamic Time Slider**: Adjust the "Current Day" to see real-time color changes (Green/Yellow/Red) based on Weibull reliability thresholds.
 - **Advanced Charting**: Logarithmic reliability charts with dynamic target intersection markers (Red crosshairs) and current day indicators (Yellow dashed lines).
+- **Maintenance Date Tracking**: Record last maintenance dates per failure mode; the system automatically calculates effective days elapsed since maintenance.
+- **Smart Log Import/Export**: Export/import maintenance logs at both system level (all components) and component level (single component).
 
 ## 📁 Project Structure
 - `dashboard.html`: The main, self-contained application file (includes embedded encrypted data).
@@ -21,6 +23,9 @@ A secure, offline-capable Reliability-Centered Maintenance (RCM) dashboard desig
 2. Double-click `dashboard.html` to open it in Chrome, Safari, or Edge.
 3. The dashboard will automatically decrypt and load the embedded data.
 
+## 📊 Version
+Current version: **v0.5.2**
+
 ---
-*© 2026 BCore · Brawijaya Center Of Reliability & Integrity Excellences*  
+*© 2026 BCore · Brawijaya Center Of Reliability & Integrity Excellences*
 *Powered by Prasanti Advisory*
