@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCM Reliability Dashboard</title>
+    <script src="crypto-js.min.js"></script>
+    <script src="chart.umd.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --bg: #f4f6f9;
+            --card-bg: #ffffff;
+            --green: #2ecc71;
+            --yellow: #f1c40f;
+            --red: #e74c3c;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 { margin: 0; font-size: 1.2rem; }
+
+        footer {
+            margin-top: auto;
+            background-color: var(--secondary);
+            color: #bdc3c7;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+
+        #app-container {
+            flex: 1;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { background-color: #2980b9; }
+        .btn-secondary { background-color: #95a5a6; }
+        .btn-secondary:hover { background-color: #7f8c8d; }
+
+        #login-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .login-box {
+            background: white; padding: 30px; border-radius: 10px;
+            width: 300px; text-align: center;
+        }
+        .login-box input {
+            width: 100%; padding: 10px; margin: 10px 0;
+            border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;
+        }
+
+        #diagram-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        #diagram-wrapper img {
+            width: 100%;
+            display: block;
+        }
+        #diagram-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .clickable-area {
+            fill: transparent;
+            stroke: transparent;
+            stroke-width: 2px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.2s ease;
+        }
+        .clickable-area:hover {
+            fill: rgba(0, 123, 255, 0.15);
+            stroke: #007bff;
+            stroke-dasharray: 5,5;
+        }
+        .comp-green { fill: rgba(46, 204, 113, 0.4) !important; stroke: #2ecc71 !important; }
+        .comp-yellow { fill: rgba(241, 196, 15, 0.4) !important; stroke: #f1c40f !important; }
+        .comp-red { fill: rgba(231, 76, 60, 0.4) !important; stroke: #e74c3c !important; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; font-weight: 600; }
+        tr:hover { background-color: #f1f1f1; cursor: pointer; }
+        
+        .status-cell { font-weight: bold; text-align: center; }
+        .status-green { color: var(--green); }
+        .status-yellow { color: #d4ac0d; }
+        .status-red { color: var(--red); }
+
+        .slider-container {
+            background: white; padding: 15px; border-radius: 8px;
+            display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: sticky; bottom: 20px; z-index: 100;
+        }
+        .slider-container input[type=range] { flex: 1; }
+        .day-display { font-weight: bold; min-width: 120px; text-align: right; }
+
+        .charts-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+        }
+        @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-box { background: white; padding: 15px; border-radius: 8px; height: 400px; }
+
+        /* SVG Calibration Mode */
+        .calibration-mode #diagram-overlay {
+            pointer-events: auto;
+        }
+        .calibration-mode .clickable-area {
+            fill: rgba(255, 0, 0, 0.2);
+            stroke: red;
+            cursor: move;
+        }
+        #calibration-controls {
+            display: none;
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 500;
+            max-width: 300px;
+        }
+        .calibration-mode #calibration-controls {
+            display: block;
+        }
+        #calibration-controls label {
+            display: block;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        #calibration-controls select, #calibration-controls input {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>RCM Reliability Dashboard</h1>
+        <div>
+            <span id="user-info" style="font-size: 0.9rem; margin-right: 15px;">Offline Mode</span>
+            <button class="btn btn-secondary" onclick="toggleCalibration()" style="font-size: 0.8rem; padding: 5px 10px;">Calibrate SVG</button>
+        </div>
+    </header>
+
+    <div id="app-container">
+        
+        <div id="view-diagram" class="view active">
+            <div class="card">
+                <h2>System Overview</h2>
+                <p>Click on a component (ESDV-101, V-101, etc.) to view its failure modes.</p>
+                <div id="diagram-wrapper">
+                    <img src="diagram.jpg" alt="System Diagram" id="diagram-image">
+                    <svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">
+                        <rect id="ESDV-101" class="clickable-area" data-x="180" data-y="115" data-w="120" data-h="40" />
+                        <rect id="V-101" class="clickable-area" data-x="340" data-y="60" data-w="120" data-h="200" />
+                        <rect id="PSV-101" class="clickable-area" data-x="520" data-y="40" data-w="100" data-h="40" />
+                        <rect id="PT-101" class="clickable-area" data-x="520" data-y="120" data-w="100" data-h="40" />
+                        <rect id="PIC-101" class="clickable-area" data-x="680" data-y="120" data-w="100" data-h="40" />
+                        <rect id="PCV-101" class="clickable-area" data-x="840" data-y="120" data-w="100" data-h="40" />
+                        <rect id="PI-101" class="clickable-area" data-x="520" data-y="220" data-w="100" data-h="40" />
+                        <rect id="P-101" class="clickable-area" data-x="680" data-y="220" data-w="100" data-h="40" />
+                        <rect id="NRV-101" class="clickable-area" data-x="840" data-y="220" data-w="100" data-h="40" />
+                        <rect id="GT-101" class="clickable-area" data-x="340" data-y="380" data-w="120" data-h="40" />
+                        <rect id="K-101" class="clickable-area" data-x="520" data-y="380" data-w="120" data-h="40" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-table" class="view">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="switchView('diagram')">← Back to Diagram</button>
+                <h2 id="table-title">Component Failure Modes</h2>
+                <div style="overflow-x: auto;">
+                    <table id="fm-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Failure Mode</th>
+                                <th>Cause</th>
+                                <th>Category</th>
+                                <th>Target R(t)</th>
+                                <th>Task List</th>
+                                <th>MTBF (Days)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-charts" class="view">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="switchView('table')">← Back to Table</button>
+                <h2 id="chart-title">Reliability & Failure Rate</h2>
+                <div class="charts-grid">
+                    <div class="chart-box"><canvas id="chart-reliability"></canvas></div>
+                    <div class="chart-box"><canvas id="chart-failurerate"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slider-container" id="global-slider" style="display:none;">
+            <label for="day-slider">Current Day:</label>
+            <input type="range" id="day-slider" min="1" max="365" value="1">
+            <div class="day-display">Day: <span id="day-value">1</span></div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div id="branding-copyright">© 2026 BCore · Brawijaya Center Of Reliability & Integrity Excellences</div>
+        <div id="branding-powered">Powered by Prasanti Advisory</div>
+    </footer>
+
+    <div id="login-modal">
+        <div class="login-box">
+            <h3>Secure Data Access</h3>
+            <p style="font-size: 0.9rem; color: #666;">Select the encrypted data file and enter password.</p>
+            <input type="file" id="file-input" accept=".enc,.json">
+            <input type="password" id="password-input" placeholder="Enter Password">
+            <button class="btn" onclick="decryptAndLoad()">Unlock Dashboard</button>
+            <p id="login-error" style="color: red; font-size: 0.8rem; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <div id="calibration-controls">
+        <h3>SVG Calibration</h3>
+        <p style="font-size: 0.85rem; color: #666;">Drag rectangles to match your diagram. Click "Export" to save coordinates.</p>
+        <label>Select Component:</label>
+        <select id="calib-select"></select>
+        <label>X: <input type="number" id="calib-x" step="10"></label>
+        <label>Y: <input type="number" id="calib-y" step="10"></label>
+        <label>Width: <input type="number" id="calib-w" step="10"></label>
+        <label>Height: <input type="number" id="calib-h" step="10"></label>
+        <button class="btn" onclick="exportCalibration()" style="margin-top: 10px; width: 100%;">Export SVG Code</button>
+        <textarea id="calib-output" style="width: 100%; height: 100px; margin-top: 10px; font-size: 0.8rem;"></textarea>
+    </div>
+
+    <script>
+        const BRANDING = {
+            copyright: "© 2026 BCore · Brawijaya Center Of Reliability & Integrity Excellences",
+            powered: "Powered by Prasanti Advisory"
+        };
+
+        let appData = null;
+        let currentDay = 1;
+        let currentComponentId = null;
+        let currentFailureModeIndex = null;
+        let chartRel = null;
+        let chartFR = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('branding-copyright').innerText = BRANDING.copyright;
+            document.getElementById('branding-powered').innerText = BRANDING.powered;
+            
+            // Initialize SVG rectangles from data attributes
+            document.querySelectorAll('.clickable-area').forEach(el => {
+                const x = el.getAttribute('data-x');
+                const y = el.getAttribute('data-y');
+                const w = el.getAttribute('data-w');
+                const h = el.getAttribute('data-h');
+                el.setAttribute('x', x);
+                el.setAttribute('y', y);
+                el.setAttribute('width', w);
+                el.setAttribute('height', h);
+
+                el.addEventListener('click', (e) => {
+                    if (document.body.classList.contains('calibration-mode')) return;
+                    const id = e.target.id;
+                    if (appData && appData.components[id]) {
+                        currentComponentId = id;
+                        renderTable(id);
+                        switchView('table');
+                    } else if (!appData) {
+                        alert("Please unlock the data file first.");
+                    } else {
+                        alert("No data found for component: " + id);
+                    }
+                });
+            });
+
+            document.getElementById('day-slider').addEventListener('input', (e) => {
+                currentDay = parseInt(e.target.value);
+                document.getElementById('day-value').innerText = currentDay;
+                updateUI();
+            });
+
+            // Populate calibration select
+            const calibSelect = document.getElementById('calib-select');
+            document.querySelectorAll('.clickable-area').forEach(el => {
+                const option = document.createElement('option');
+                option.value = el.id;
+                option.text = el.id;
+                calibSelect.appendChild(option);
+            });
+            calibSelect.addEventListener('change', updateCalibrationInputs);
+            ['calib-x', 'calib-y', 'calib-w', 'calib-h'].forEach(id => {
+                document.getElementById(id).addEventListener('change', applyCalibration);
+            });
+            updateCalibrationInputs();
+        });
+
+        function toggleCalibration() {
+            document.body.classList.toggle('calibration-mode');
+            if (document.body.classList.contains('calibration-mode')) {
+                alert('Calibration mode ON. Drag rectangles to match your diagram. Click "Calibrate SVG" again to exit.');
+            }
+        }
+
+        function updateCalibrationInputs() {
+            const id = document.getElementById('calib-select').value;
+            const el = document.getElementById(id);
+            document.getElementById('calib-x').value = el.getAttribute('x');
+            document.getElementById('calib-y').value = el.getAttribute('y');
+            document.getElementById('calib-w').value = el.getAttribute('width');
+            document.getElementById('calib-h').value = el.getAttribute('height');
+        }
+
+        function applyCalibration() {
+            const id = document.getElementById('calib-select').value;
+            const el = document.getElementById(id);
+            el.setAttribute('x', document.getElementById('calib-x').value);
+            el.setAttribute('y', document.getElementById('calib-y').value);
+            el.setAttribute('width', document.getElementById('calib-w').value);
+            el.setAttribute('height', document.getElementById('calib-h').value);
+            el.setAttribute('data-x', document.getElementById('calib-x').value);
+            el.setAttribute('data-y', document.getElementById('calib-y').value);
+            el.setAttribute('data-w', document.getElementById('calib-w').value);
+            el.setAttribute('data-h', document.getElementById('calib-h').value);
+        }
+
+        function exportCalibration() {
+            let svg = '<svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">\n';
+            document.querySelectorAll('.clickable-area').forEach(el => {
+                svg += `  <rect id="${el.id}" class="clickable-area" x="${el.getAttribute('x')}" y="${el.getAttribute('y')}" width="${el.getAttribute('width')}" height="${el.getAttribute('height')}" />\n`;
+            });
+            svg += '</svg>';
+            document.getElementById('calib-output').value = svg;
+        }
+
+        function decryptAndLoad() {
+            const fileInput = document.getElementById('file-input');
+            const password = document.getElementById('password-input').value;
+            const errorMsg = document.getElementById('login-error');
+
+            if (!fileInput.files[0]) { errorMsg.innerText = "Please select a data file."; return; }
+            if (!password) { errorMsg.innerText = "Please enter a password."; return; }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    if (typeof CryptoJS === 'undefined') {
+                        throw new Error("CryptoJS library is missing!");
+                    }
+                    const bytes = CryptoJS.AES.decrypt(e.target.result, password);
+                    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+                    if (!decryptedString) throw new Error("Wrong password or corrupted file.");
+                    
+                    appData = JSON.parse(decryptedString);
+                    document.getElementById('day-slider').max = appData.maxDays || 365;
+                    document.getElementById('login-modal').style.display = 'none';
+                    document.getElementById('global-slider').style.display = 'flex';
+                    updateDiagramColors();
+                } catch (err) {
+                    console.error("Decryption Error:", err);
+                    errorMsg.innerText = "Error: " + err.message;
+                }
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            if (viewName === 'diagram') {
+                currentComponentId = null;
+                updateDiagramColors();
+            } else if (viewName === 'table') {
+                renderTable(currentComponentId);
+            } else if (viewName === 'charts') {
+                renderCharts();
+            }
+        }
+
+        // FIXED: Correct threshold logic
+        // thresholds.yellow = day when Green→Yellow transition occurs
+        // thresholds.red = day when Yellow→Red transition occurs
+        function getStatusColor(day, thresholds) {
+            if (day <= thresholds.yellow) return 'green';
+            if (day <= thresholds.red) return 'yellow';
+            return 'red';
+        }
+
+        function getComponentStatus(compId) {
+            const comp = appData.components[compId];
+            let worstStatus = 'green';
+            const priority = { 'green': 1, 'yellow': 2, 'red': 3 };
+            comp.failureModes.forEach(fm => {
+                const status = getStatusColor(currentDay, fm.thresholds);
+                if (priority[status] > priority[worstStatus]) worstStatus = status;
+            });
+            return worstStatus;
+        }
+
+        function updateDiagramColors() {
+            if (!appData) return;
+            Object.keys(appData.components).forEach(compId => {
+                const el = document.getElementById(compId);
+                if (el) {
+                    el.classList.remove('comp-green', 'comp-yellow', 'comp-red');
+                    el.classList.add(`comp-${getComponentStatus(compId)}`);
+                }
+            });
+        }
+
+        function renderTable(compId) {
+            const comp = appData.components[compId];
+            document.getElementById('table-title').innerText = `Failure Modes: ${compId}`;
+            const tbody = document.querySelector('#fm-table tbody');
+            tbody.innerHTML = '';
+
+            comp.failureModes.forEach((fm, index) => {
+                const status = getStatusColor(currentDay, fm.thresholds);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${fm.name}</td>
+                    <td>${fm.cause}</td>
+                    <td>${fm.category}</td>
+                    <td>${fm.targetRt}%</td>
+                    <td>${fm.taskList}</td>
+                    <td>${fm.mtbfDays.toFixed(1)}</td>
+                    <td class="status-cell status-${status}">${status.toUpperCase()}</td>
+                `;
+                tr.addEventListener('click', () => {
+                    currentFailureModeIndex = index;
+                    switchView('charts');
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCharts() {
+            const comp = appData.components[currentComponentId];
+            const fm = comp.failureModes[currentFailureModeIndex];
+            document.getElementById('chart-title').innerText = `${currentComponentId} - ${fm.name}`;
+
+            const days = fm.days;
+            const reliabilityData = fm.reliabilityData;
+            const failureRateData = fm.failureRateData;
+            const targetRt = fm.targetRt;
+            
+            // Find the day when reliability drops below target
+            let targetDay = days[days.length - 1];
+            for (let i = 0; i < reliabilityData.length; i++) {
+                if (reliabilityData[i] < targetRt) {
+                    targetDay = days[i];
+                    break;
+                }
+            }
+
+            if (chartRel) chartRel.destroy();
+            if (chartFR) chartFR.destroy();
+
+            // Reliability Chart
+            chartRel = new Chart(document.getElementById('chart-reliability').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: 'Reliability R(t) %',
+                            data: reliabilityData,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        },
+                        {
+                            label: `Target R(t) = ${targetRt}%`,
+                            data: Array(days.length).fill(targetRt),
+                            borderColor: '#e74c3c',
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        },
+                        {
+                            label: `Day ${targetDay} (Target breach)`,
+                            data: Array(days.length).fill(null).map((_, i) => days[i] === targetDay ? targetRt : null),
+                            borderColor: '#e74c3c',
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0,
+                            borderWidth: 2,
+                            showLine: false
+                        },
+                        {
+                            label: `Current Day ${currentDay}`,
+                            data: Array(days.length).fill(null).map((_, i) => days[i] === currentDay ? reliabilityData[i] : null),
+                            borderColor: '#f1c40f',
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#f1c40f',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Days' },
+                            type: 'linear',
+                            min: 1,
+                            max: Math.max(...days)
+                        },
+                        y: { 
+                            title: { display: true, text: 'Reliability %' },
+                            min: Math.min(...reliabilityData) - 1,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    xMin: currentDay,
+                                    xMax: currentDay,
+                                    borderColor: '#f1c40f',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Failure Rate Chart
+            chartFR = new Chart(document.getElementById('chart-failurerate').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: 'Failure Rate',
+                            data: failureRateData,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        },
+                        {
+                            label: `Current Day ${currentDay}`,
+                            data: Array(days.length).fill(null).map((_, i) => days[i] === currentDay ? failureRateData[i] : null),
+                            borderColor: '#f1c40f',
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#f1c40f',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Days' },
+                            type: 'linear',
+                            min: 1,
+                            max: Math.max(...days)
+                        },
+                        y: { 
+                            title: { display: true, text: 'Failure Rate' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateUI() {
+            if (document.getElementById('view-diagram').classList.contains('active')) updateDiagramColors();
+            else if (document.getElementById('view-table').classList.contains('active')) renderTable(currentComponentId);
+            else if (document.getElementById('view-charts').classList.contains('active')) renderCharts();
+        }
+    </script>
+</body>
+</html>
