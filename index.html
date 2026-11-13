@@ -1,31 +1,27 @@
-<!-- Version: v0.6.2 -->
+<!-- Version: v0.6.15 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <style> body { opacity: 0; transition: opacity 0.2s ease-in; } </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCM Reliability Dashboard v0.6.2</title>
+    <title>RCM Reliability Dashboard v0.6.15</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F172A'/%3E%3Cpath d='M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z' fill='%231E293B' stroke='%233B82F6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%2310B981' stroke-width='4'/%3E%3Cpath d='M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34' stroke='%2310B981' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
     <script src="crypto-js.min.js"></script>
     <script src="chart.umd.js"></script>
     <style>
         :root { --primary:#2c3e50; --secondary:#34495e; --accent:#3498db; --bg:#f4f6f9; --card-bg:#fff; --green:#2ecc71; --yellow:#f1c40f; --red:#e74c3c; --text:#333; }
         body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; margin:0; padding:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
-        header { background:var(--primary); color:#fff; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,.1); padding-right:170px; }
+        header { background:var(--primary); color:#fff; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,.1); padding-right:170px; min-height:64px; }
+        .brand { display:flex; align-items:center; gap:12px; }
         header h1 { margin:0; font-size:1.2rem; }
         .version-badge { background:var(--accent); padding:4px 8px; border-radius:4px; font-size:.8rem; font-weight:bold; margin-left:10px; }
-        .status-indicator { font-size:.9rem; margin-right:15px; font-weight:bold; }
-        .status-loaded{color:#2ecc71;} .status-unloaded{color:#e74c3c;}
         footer { margin-top:auto; background:var(--secondary); color:#bdc3c7; text-align:center; padding:10px; font-size:.85rem; }
         #app-container { flex:1; padding:20px; max-width:1400px; margin:0 auto; width:100%; box-sizing:border-box; }
         .view{display:none;} .view.active{display:block;}
         .card { background:var(--card-bg); border-radius:8px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); margin-bottom:20px; }
         .btn { background:var(--accent); color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-size:1rem; margin-right:5px; }
         .btn:hover{background:#2980b9;} .btn-secondary{background:#95a5a6;} .btn-success{background:#27ae60;}
-        #login-modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; justify-content:center; align-items:center; z-index:1000; }
-        .login-box { background:#fff; padding:30px; border-radius:10px; width:300px; text-align:center; }
-        .login-box input { width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box; }
         #diagram-wrapper { position:relative; width:100%; max-width:1300px; margin:0 auto; }
         #diagram-wrapper img { width:100%; display:block; }
         #diagram-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
@@ -59,15 +55,29 @@
         .log-controls-group:last-child{border-right:none;}
         .fm-details { margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9rem; }
         .fm-details strong { color: var(--primary); }
-        .actual-data-icon { color: #3498db; font-size: 1.2rem; cursor: help; margin-left: 5px; vertical-align: middle; }
+        #caden-license-panel .col{display:flex;flex-direction:column;gap:2px;}
+        #caden-license-panel .lbl{opacity:.7;text-transform:uppercase;letter-spacing:.5px;font-size:9px;}
+        #caden-license-panel .val{color:#fff;font-weight:600;}
     </style>
 
-<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.2) -->
+<style>
+    footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--secondary);color:#bdc3c7;font-size:.85rem;}
+    .footer-left,.footer-right{flex:1;min-width:200px;}
+    .footer-left{text-align:left;}
+    .footer-right{text-align:right;}
+    .footer-center{flex:2;text-align:center;}
+    .footer-center div{margin:2px 0;}
+    #footer-user-name,#footer-license-expiry{color:#fff;font-weight:600;}
+</style>
+
+
+<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.15) -->
 <script>
 (function () {
-    const CADEN_VERSION = "0.6.2";
+    const CADEN_VERSION = "0.6.5";
     const CADEN_CONFIG = {
-        appId: "RCM_DASHBOARD",
+        appId: "RCM",
+        appVersion: typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown',
         serverUrl: "https://caden.prasanti.com",
         wssUrl: "wss://caden.prasanti.com/v1/stream",
         trialDays: 3, 
@@ -83,7 +93,7 @@
         userInfo: `${CADEN_CONFIG.appId}_USER_INFO`,
         serverTrialDays: `${CADEN_CONFIG.appId}_SERVER_TRIAL_DAYS`,
         appealStatus: `${CADEN_CONFIG.appId}_APPEAL_STATUS`,
-        revokedStatus: `${CADEN_CONFIG.appId}_IS_REVOKED` // NEW: Local persistence for revocation
+        revokedStatus: `${CADEN_CONFIG.appId}_IS_REVOKED`
     };
 
     function revealApp() {
@@ -107,7 +117,9 @@
                     if (gl) { const d = gl.getExtension('WEBGL_debug_renderer_info'); return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : 'WebGL supported'; }
                     return 'Not supported';
                 } catch (e) { return 'Error'; }
-            })()
+            })(),
+            cadenVersion: CADEN_VERSION,
+            ...((typeof APP_BUILD_META !== 'undefined') ? APP_BUILD_META : ((typeof RCM_BUILD_META !== 'undefined') ? RCM_BUILD_META : {}))
         };
     }
 
@@ -133,8 +145,10 @@
             let hash = 0;
             const inputs = ctxString + navigator.userAgent + screen.width + screen.height + navigator.hardwareConcurrency;
             for (let i = 0; i < inputs.length; i++) { const char = inputs.charCodeAt(i); hash = ((hash << 5) - hash) + char; hash |= 0; }
-            return "CADEN-" + Math.abs(hash).toString(16).toUpperCase() + "-" + getPersistentUUID().split('-')[0];
-        } catch (e) { return "CADEN-GENERIC-" + getPersistentUUID().split('-')[0]; }
+            // Prefix based on App ID (e.g., RCM_DASHBOARD -> RCM)
+            const prefix = CADEN_CONFIG.appId.toUpperCase();
+            return prefix + "-" + Math.abs(hash).toString(16).toUpperCase() + "-" + getPersistentUUID().split('-')[0];
+        } catch (e) { return "RCM-GENERIC-" + getPersistentUUID().split('-')[0]; }
     }
 
     window.storeSystemTelemetry = function(type, messagePayload, level = 2) {
@@ -145,7 +159,18 @@
         if (logBuffer.length > 100) logBuffer = logBuffer.slice(-100);
         try { localStorage.setItem(KEYS.logs, JSON.stringify(logBuffer)); } catch(e) {}
     };
-    window.onerror = function(msg, url, line) { window.storeSystemTelemetry("RUNTIME_ERROR", `${msg} at line ${line} in ${url}`, 1); return false; };
+    
+    // Enhanced error tracking with navigation context
+    let activeTab = 'Main';
+    document.addEventListener('click', function(e) {
+        if (e.target.classList && e.target.classList.contains('tab-btn')) activeTab = e.target.textContent.trim();
+    });
+    
+    window.onerror = function(msg, url, line, col, error) { 
+        const ctx = { activeTab: activeTab, url: url, line: line };
+        window.storeSystemTelemetry("RUNTIME_ERROR", `${msg} at line ${line} in ${url} | NAV: ${JSON.stringify(ctx)}`, 1); 
+        return false; 
+    };
     window.logCadenOperation = function(operationName, detail) { if (CADEN_CONFIG.logLevel >= 2) window.storeSystemTelemetry("OPERATION", `${operationName}: ${detail}`, 2); };
 
     async function dischargeBufferedTelemetry() {
@@ -161,41 +186,25 @@
     function showRegistrationModal(isAppeal = false) {
         if (document.getElementById('caden-reg-modal')) return;
         revealApp();
-
         const modal = document.createElement('div');
         modal.id = 'caden-reg-modal';
         modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:100000;display:flex;align-items:center;justify-content:center;';
         const title = isAppeal ? "License Revoked - Appeal Form" : "Welcome to RCM Dashboard";
         const desc = isAppeal ? "Your license has been revoked. Please update your details to submit an appeal." : `Please enter your details to start your trial period.`;
-        
-        modal.innerHTML = `
-            <div style="background:#1e293b;border:1px solid #334155;padding:40px;border-radius:8px;max-width:400px;width:90%;font-family:sans-serif;color:#f8fafc;">
-                <h2 style="color:${isAppeal ? '#ef4444' : '#3b82f6'};margin-top:0;">${title}</h2>
-                <p style="font-size:14px;color:#cbd5e1;margin-bottom:20px;">${desc}</p>
-                <input type="text" id="reg-name" placeholder="Full Name" style="width:100%;padding:10px;margin-bottom:10px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;">
-                <input type="email" id="reg-email" placeholder="Email Address" style="width:100%;padding:10px;margin-bottom:10px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;">
-                <input type="text" id="reg-wa" placeholder="WhatsApp Number" style="width:100%;padding:10px;margin-bottom:20px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;">
-                <button id="reg-submit" style="width:100%;padding:12px;background:${isAppeal ? '#ef4444' : '#3b82f6'};color:white;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">${isAppeal ? 'Submit Appeal' : 'Start Trial'}</button>
-            </div>`;
+        modal.innerHTML = `<div style="background:#1e293b;border:1px solid #334155;padding:40px;border-radius:8px;max-width:400px;width:90%;font-family:sans-serif;color:#f8fafc;"><h2 style="color:${isAppeal ? '#ef4444' : '#3b82f6'};margin-top:0;">${title}</h2><p style="font-size:14px;color:#cbd5e1;margin-bottom:20px;">${desc}</p><input type="text" id="reg-name" placeholder="Full Name" style="width:100%;padding:10px;margin-bottom:10px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;"><input type="email" id="reg-email" placeholder="Email Address" style="width:100%;padding:10px;margin-bottom:10px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;"><input type="text" id="reg-wa" placeholder="WhatsApp Number" style="width:100%;padding:10px;margin-bottom:20px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;"><button id="reg-submit" style="width:100%;padding:12px;background:${isAppeal ? '#ef4444' : '#3b82f6'};color:white;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">${isAppeal ? 'Submit Appeal' : 'Start Trial'}</button></div>`;
         document.body.appendChild(modal);
-        
         document.getElementById('reg-submit').onclick = function() {
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const wa = document.getElementById('reg-wa').value.trim();
             if (!name || !email || !wa) { alert("Please fill all fields."); return; }
-            
             localStorage.setItem(KEYS.userInfo, JSON.stringify({ name, email, whatsapp: wa }));
             modal.remove();
-            
-            if (isAppeal) {
-                submitRevocationAppeal(name, email, wa);
-            } else {
+            if (isAppeal) submitRevocationAppeal(name, email, wa);
+            else {
                 localStorage.setItem(KEYS.genesis, JSON.stringify({ genesisEpoch: Date.now(), boundApp: CADEN_CONFIG.appId }));
                 window.storeSystemTelemetry("REGISTRATION", `User registered: ${name}`, 2);
-                autoActivate().then(() => {
-                    showTrialDeadlineMessage();
-                });
+                autoActivate().then(() => showTrialDeadlineMessage());
             }
         };
     }
@@ -209,16 +218,10 @@
         const hh = String(expiryDate.getHours()).padStart(2, '0');
         const min = String(expiryDate.getMinutes()).padStart(2, '0');
         const dateStr = `${dd}/${mm}/${yy} ${hh}:${min}`;
-
         const msg = document.createElement('div');
         msg.id = 'caden-trial-msg';
         msg.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1e293b;border:1px solid #3b82f6;color:white;padding:20px;border-radius:8px;z-index:99999;font-family:sans-serif;font-size:14px;box-shadow:0 4px 6px rgba(0,0,0,0.3);max-width:300px;';
-        msg.innerHTML = `
-            <div style="color:#3b82f6;font-weight:bold;margin-bottom:10px;font-size:16px;">✅ Trial Started</div>
-            <div style="margin-bottom:10px;line-height:1.5;">You are in a <b>${CADEN_CONFIG.trialDays}-day trial period</b>.</div>
-            <div style="color:#fbbf24;font-size:13px;line-height:1.4;">⚠️ You must connect to the internet before <b>${dateStr}</b> to complete registration and continue using the app.</div>
-            <button onclick="this.parentElement.remove()" style="margin-top:15px;width:100%;padding:8px;background:#334155;color:white;border:none;border-radius:4px;cursor:pointer;">I Understand</button>
-        `;
+        msg.innerHTML = `<div style="color:#3b82f6;font-weight:bold;margin-bottom:10px;font-size:16px;">✅ Trial Started</div><div style="margin-bottom:10px;line-height:1.5;">You are in a <b>${CADEN_CONFIG.trialDays}-day trial period</b>.</div><div style="color:#fbbf24;font-size:13px;line-height:1.4;">⚠️ You must connect to the internet before <b>${dateStr}</b> to complete registration and continue using the app.</div><button onclick="this.parentElement.remove()" style="margin-top:15px;width:100%;padding:8px;background:#334155;color:white;border:none;border-radius:4px;cursor:pointer;">I Understand</button>`;
         document.body.appendChild(msg);
     }
 
@@ -229,99 +232,88 @@
             const response = await fetch(url, { method: 'POST' });
             if (response.ok) {
                 localStorage.setItem(KEYS.appealStatus, 'PENDING');
-                // Note: revokedStatus remains true until admin approves
                 window.storeSystemTelemetry("APPEAL_SUBMITTED", `Appeal submitted by ${name}`, 2);
                 _doLockdown("Appeal submitted successfully. Awaiting administrator approval. Please close this application.");
-            } else {
-                alert("Failed to submit appeal. Please try again later.");
-            }
-        } catch (err) {
-            alert("Network error. Please connect to the internet and try again.");
-        }
+            } else alert("Failed to submit appeal. Please try again later.");
+        } catch (err) { alert("Network error. Please connect to the internet and try again."); }
     }
 
     async function autoActivate() {
         const deviceId = generateDeviceFingerprint();
         const sysInfo = JSON.stringify(collectSystemInfo());
         const userInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-        
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000); 
-
             const url = `${CADEN_CONFIG.serverUrl}/v1/activate?appId=${CADEN_CONFIG.appId}&deviceId=${deviceId}&ownerName=${encodeURIComponent(userInfo.name || '')}&ownerEmail=${encodeURIComponent(userInfo.email || '')}&ownerWhatsapp=${encodeURIComponent(userInfo.whatsapp || '')}&systemInfo=${encodeURIComponent(sysInfo)}`;
             const response = await fetch(url, { method: 'POST', signal: controller.signal });
             clearTimeout(timeoutId);
-            
             if (response.status === 403) {
                 let errorDetail = "";
-                try {
-                    const errData = await response.json();
-                    errorDetail = errData.detail || "";
-                } catch(e) {}
-
-                // CRITICAL: Persist revocation locally
+                try { const errData = await response.json(); errorDetail = errData.detail || ""; } catch(e) {}
                 localStorage.setItem(KEYS.revokedStatus, 'true');
-
                 if (errorDetail === "APPEAL_PENDING") {
                     localStorage.setItem(KEYS.appealStatus, 'PENDING');
                     _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-                } else {
-                    showRegistrationModal(true);
-                }
+                } else showRegistrationModal(true);
                 return;
             }
-            
             if (response.ok) {
                 const data = await response.json();
-                
-                // If server says we are active, clear local revocation flags
                 if (data.status === 'ACTIVE') {
                     localStorage.removeItem(KEYS.revokedStatus);
                     localStorage.removeItem(KEYS.appealStatus);
                 }
-
                 if (data.trial_days) {
                     CADEN_CONFIG.trialDays = data.trial_days;
                     localStorage.setItem(KEYS.serverTrialDays, data.trial_days);
                 }
-                
+                if (data.owner_name) {
+                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                    currentInfo.name = data.owner_name;
+                    currentInfo.email = data.owner_email;
+                    currentInfo.whatsapp = data.owner_whatsapp;
+                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
+                }
+
+                if (data.owner_name) {
+                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                    currentInfo.name = data.owner_name;
+                    currentInfo.email = data.owner_email;
+                    currentInfo.whatsapp = data.owner_whatsapp;
+                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
+                }
+
+                if (data.owner_name) {
+                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                    currentInfo.name = data.owner_name;
+                    currentInfo.email = data.owner_email;
+                    currentInfo.whatsapp = data.owner_whatsapp;
+                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
+                }
+
                 if (data.token) {
                     const existingToken = localStorage.getItem(KEYS.token);
                     if (existingToken) {
                         const existingExp = JSON.parse(atob(existingToken.split('.')[1])).exp;
                         const newExp = JSON.parse(atob(data.token.split('.')[1])).exp;
-                        if (newExp <= existingExp) {
-                            revealApp(); 
-                            return;
-                        }
+                        if (newExp <= existingExp) { revealApp(); return; }
                     }
                     localStorage.setItem(KEYS.token, data.token);
                     window.storeSystemTelemetry("ACTIVATION", "Device activated successfully.", 2);
                     revealApp(); 
                 } else {
-                    if (data.status === 'ACTIVE' || localStorage.getItem(KEYS.token)) {
-                        revealApp();
-                    } else {
-                        showRegistrationModal(false);
-                    }
+                    if (data.status === 'ACTIVE' || localStorage.getItem(KEYS.token)) revealApp();
+                    else showRegistrationModal(false);
                 }
             }
         } catch (err) { 
             window.storeSystemTelemetry("ACTIVATION_ERROR", `Failed: ${err.message}`, 1);
-            // Failsafe: Only reveal if we have a token AND we are NOT locally revoked
-            if ((localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) && !localStorage.getItem(KEYS.revokedStatus)) {
-                revealApp();
-            } else if (localStorage.getItem(KEYS.revokedStatus)) {
-                // If offline and revoked, show appropriate screen
-                if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
-                    _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-                } else {
-                    showRegistrationModal(true);
-                }
-            } else {
-                showRegistrationModal(false);
-            }
+            if ((localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) && !localStorage.getItem(KEYS.revokedStatus)) revealApp();
+            else if (localStorage.getItem(KEYS.revokedStatus)) {
+                if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
+                else showRegistrationModal(true);
+            } else showRegistrationModal(false);
         }
     }
 
@@ -340,10 +332,7 @@
     function executeLockdownScreen(displayMessage) { _doLockdown(displayMessage); }
 
     function _doLockdown(displayMessage) {
-        if (!document.body) {
-            document.addEventListener('DOMContentLoaded', () => _doLockdown(displayMessage));
-            return;
-        }
+        if (!document.body) { document.addEventListener('DOMContentLoaded', () => _doLockdown(displayMessage)); return; }
         document.body.style.opacity = '1';
         document.body.style.pointerEvents = 'auto';
         document.body.innerHTML = `<div style="font-family:sans-serif; text-align:center; padding:100px; background:#0f172a; color:#f8fafc; height:100vh; margin:0;"><div style="max-width:500px; margin:0 auto; border:1px solid #334155; padding:40px; border-radius:8px; background:#1e293b;"><h2 style="color:#ef4444; margin-top:0;">CADEN Governance Lockdown</h2><p style="font-size:15px; line-height:1.6; color:#cbd5e1;">${displayMessage}</p><div style="margin-top:25px; font-size:12px; color:#64748b;">Device ID: ${generateDeviceFingerprint()} | Script v${CADEN_VERSION}</div></div></div>`;
@@ -352,23 +341,15 @@
 
     function runSecurityGovernanceEvaluation() {
         if (!assertChronologicalIntegrity()) return false;
-        
-        // CRITICAL: Check local revocation status FIRST
         if (localStorage.getItem(KEYS.revokedStatus) === 'true') {
-            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
-                _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-            } else {
-                showRegistrationModal(true); // Show appeal form immediately, even if offline
-            }
+            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
+            else showRegistrationModal(true);
             return false;
         }
-
         const activeToken = localStorage.getItem(KEYS.token);
         const initialActivationRecord = localStorage.getItem(KEYS.genesis);
-
         const serverTrialDays = localStorage.getItem(KEYS.serverTrialDays);
         if (serverTrialDays) CADEN_CONFIG.trialDays = parseInt(serverTrialDays);
-
         if (activeToken) {
             try {
                 const payloadObject = JSON.parse(atob(activeToken.split('.')[1]));
@@ -378,7 +359,6 @@
                 return true; 
             } catch (e) { executeLockdownScreen("Token error."); return false; }
         }
-
         if (initialActivationRecord) {
             try {
                 const parsedRecord = JSON.parse(initialActivationRecord);
@@ -387,7 +367,6 @@
                 else { if (!navigator.onLine) revealApp(); } 
             } catch (jsonErr) { executeLockdownScreen("Trial error."); return false; }
         }
-        
         return true;
     }
 
@@ -396,15 +375,10 @@
             await autoActivate();
             const newToken = localStorage.getItem(KEYS.token);
             if (newToken) {
-                try {
-                    const exp = JSON.parse(atob(newToken.split('.')[1])).exp;
-                    if (exp * 1000 > Date.now()) { revealApp(); return; }
-                } catch(e) {}
+                try { const exp = JSON.parse(atob(newToken.split('.')[1])).exp; if (exp * 1000 > Date.now()) { revealApp(); return; } } catch(e) {}
             }
             executeLockdownScreen("Trial expired. Please contact the administrator to extend your license.");
-        } else {
-            executeLockdownScreen(`Trial expired. Please connect to the internet to activate your license.`);
-        }
+        } else executeLockdownScreen(`Trial expired. Please connect to the internet to activate your license.`);
     }
 
     function injectCADENBadge() {
@@ -412,19 +386,10 @@
         const badge = document.createElement('div');
         badge.id = 'caden-badge';
         badge.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999; opacity: 0.7; transition: opacity 0.3s;';
-        
         const fullId = generateDeviceFingerprint();
         const parts = fullId.split('-');
         const shortId = parts.length >= 3 ? `${parts[1]}-${parts[2]}` : fullId;
-
-        badge.innerHTML = `
-            <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer;" onmouseover="this.parentElement.style.opacity='1'" onmouseout="this.parentElement.style.opacity='0.7'">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 100 100" style="flex-shrink: 0;"><path d="M50 5 L90 20 L90 55 C90 80 50 95 50 95 C50 95 10 80 10 55 L10 20 Z" fill="#1D4ED8"/><path d="M50 5 L10 20 L10 55 C10 80 50 95 50 95 Z" fill="#2563EB"/><circle cx="50" cy="38" r="10" fill="none" stroke="#FBBF24" stroke-width="4"/><line x1="50" y1="48" x2="50" y2="78" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="65" x2="62" y2="65" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="73" x2="58" y2="73" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/></svg>
-                    <span style="color: #94a3b8; font-size: 11px; font-family: sans-serif; font-weight: bold;">Protected by CADEN</span>
-                </div>
-                <div style="color: #64748b; font-size: 9px; font-family: monospace; margin-left: 24px;">ID: ${shortId}</div>
-            </div>`;
+        badge.innerHTML = `<div style="background: rgba(30, 41, 59, 0.9); border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer;" onmouseover="this.parentElement.style.opacity='1'" onmouseout="this.parentElement.style.opacity='0.7'"><div style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 100 100" style="flex-shrink: 0;"><path d="M50 5 L90 20 L90 55 C90 80 50 95 50 95 C50 95 10 80 10 55 L10 20 Z" fill="#1D4ED8"/><path d="M50 5 L10 20 L10 55 C10 80 50 95 50 95 Z" fill="#2563EB"/><circle cx="50" cy="38" r="10" fill="none" stroke="#FBBF24" stroke-width="4"/><line x1="50" y1="48" x2="50" y2="78" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="65" x2="62" y2="65" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="73" x2="58" y2="73" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/></svg><span style="color: #94a3b8; font-size: 11px; font-family: sans-serif; font-weight: bold;">Protected by CADEN</span></div><div style="color: #64748b; font-size: 9px; font-family: monospace; margin-left: 24px;">ID: ${shortId}</div></div>`;
         document.body.appendChild(badge);
     }
 
@@ -436,60 +401,31 @@
             socketConnection.onmessage = function(event) {
                 try {
                     const serverMessage = JSON.parse(event.data);
-                    if (serverMessage.directive === "REVOKE_IMMEDIATE") { 
-                        // CRITICAL: Persist revocation locally immediately
-                        localStorage.setItem(KEYS.revokedStatus, 'true');
-                        localStorage.removeItem(KEYS.token); 
-                        executeLockdownScreen("Device revoked."); 
-                    }
-                    if (serverMessage.directive === "UPDATE_TOKEN") { 
-                        localStorage.removeItem(KEYS.token); 
-                        autoActivate(); 
-                    }
+                    if (serverMessage.directive === "REVOKE_IMMEDIATE") { localStorage.setItem(KEYS.revokedStatus, 'true'); localStorage.removeItem(KEYS.token); executeLockdownScreen("Device revoked."); }
+                    if (serverMessage.directive === "UPDATE_TOKEN") { localStorage.removeItem(KEYS.token); autoActivate(); }
                 } catch(err) {}
             };
             socketConnection.onclose = () => setTimeout(spawnStealthConnectivityBroker, 5000);
         } catch(e) {}
     }
 
-    // --- Initialization ---
     document.addEventListener("DOMContentLoaded", function() {
-        if (document.body) {
-            document.body.style.opacity = '0';
-            document.body.style.pointerEvents = 'none';
-        }
-
+        if (document.body) { document.body.style.opacity = '0'; document.body.style.pointerEvents = 'none'; }
         injectCADENBadge();
-
-        // Check local revocation status immediately
         if (localStorage.getItem(KEYS.revokedStatus) === 'true') {
-            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
-                _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-            } else {
-                showRegistrationModal(true); // Show appeal form even if offline
-            }
+            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
+            else showRegistrationModal(true);
             return; 
         }
-
         const canContinue = runSecurityGovernanceEvaluation();
         if (!canContinue) return;
-
-        if (!localStorage.getItem(KEYS.genesis) && !localStorage.getItem(KEYS.userInfo)) {
-            showRegistrationModal(false);
-            return; 
-        }
-
+        if (!localStorage.getItem(KEYS.genesis) && !localStorage.getItem(KEYS.userInfo)) { showRegistrationModal(false); return; }
         window.addEventListener('online', () => { spawnStealthConnectivityBroker(); autoActivate(); });
         setTimeout(spawnStealthConnectivityBroker, 2000);
         window.logCadenOperation("APP_START", `RCM Dashboard initialized (CADEN v${CADEN_VERSION})`);
-        
-        if (navigator.onLine) {
-            autoActivate(); 
-        } else if (localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) {
-            revealApp(); 
-        } else {
-            showRegistrationModal(false);
-        }
+        if (navigator.onLine) autoActivate(); 
+        else if (localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) revealApp(); 
+        else showRegistrationModal(false);
     });
 })();
 </script>
@@ -497,7 +433,7 @@
 </head>
 <body>
     <header>
-        <div style="display:flex;align-items:center;gap:12px;">
+        <div class="brand">
             <svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;">
                 <rect width="100" height="100" rx="20" fill="#0F172A"/>
                 <path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/>
@@ -505,14 +441,12 @@
                 <path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
             </svg>
             <h1>RCM Reliability Dashboard</h1>
-            <span class="version-badge">v0.6.2</span>
-        </div>
-        <div>
-            <span id="data-status" class="status-indicator status-unloaded">Data: Not Loaded</span>
-            <span id="user-info" style="font-size:.9rem;margin-right:15px;">Offline Mode</span>
-            <button class="btn btn-secondary" onclick="toggleCalibration()" style="font-size:.8rem;padding:5px 10px;">Calibrate SVG</button>
+            <span class="version-badge">v0.6.15</span>
         </div>
     </header>
+    
+    <div> </div>
+    </div>
 
     <div id="app-container">
         <div id="view-diagram" class="view active">
@@ -523,6 +457,7 @@
                         <button class="btn btn-success" onclick="exportSystemLog()" style="font-size:.9rem;">Export System Log</button>
                         <button class="btn" onclick="document.getElementById('import-system-log-input').click()" style="font-size:.9rem;">Import System Log</button>
                         <input type="file" id="import-system-log-input" accept=".json" style="display:none;" onchange="importSystemLog(event)">
+                        <button class="btn" style="background:#c0392b;font-size:.9rem;" onclick="clearAllMaintenance()">Clear All Maintenance</button>
                     </div></div>
                 </div>
                 <p>Click on a component (ESDV-101, V-101, etc.) to view its failure modes.</p>
@@ -553,12 +488,13 @@
                         <button class="btn btn-success" onclick="exportComponentLog()" style="font-size:.9rem;">Export Component Log</button>
                         <button class="btn" onclick="document.getElementById('import-comp-log-input').click()" style="font-size:.9rem;">Import Component Log</button>
                         <input type="file" id="import-comp-log-input" accept=".json" style="display:none;" onchange="importComponentLog(event)">
+                        <button class="btn" style="background:#c0392b;font-size:.9rem;" onclick="clearComponentMaintenance()">Clear Component Maintenance</button>
                     </div></div>
                 </div>
                 <h2 id="table-title">Component Failure Modes</h2>
                 <div style="overflow-x:auto;">
                     <table id="fm-table"><thead><tr>
-                        <th>No</th><th>Failure Mode</th><th>Cause</th><th>Category</th>
+                        <th style="text-align:right">No</th><th>Failure Mode</th><th>Cause</th><th>Category</th>
                         <th>Target R(t)</th><th>Task List</th><th>MTBF (Days)</th>
                         <th>Last Maintenance Date</th><th>Status</th>
                     </tr></thead><tbody></tbody></table>
@@ -586,16 +522,11 @@
         </div>
     </div>
 
-    <footer><div id="branding-copyright"></div><div id="branding-powered"></div></footer>
-
-    <div id="login-modal"><div class="login-box">
-        <h3>Secure Data Access</h3>
-        <p style="font-size:.9rem;color:#666;">Select the encrypted data file and enter password.</p>
-        <input type="file" id="file-input" accept=".enc,.json">
-        <input type="password" id="password-input" placeholder="Enter Password">
-        <button class="btn" onclick="decryptAndLoad()">Unlock Dashboard</button>
-        <p id="login-error" style="color:red;font-size:.8rem;margin-top:10px;"></p>
-    </div></div>
+    <footer>
+        <div class="footer-left">User: <span id="footer-user-name">—</span></div>
+        <div class="footer-center"><div id="branding-copyright"></div><div id="branding-powered"></div></div>
+        <div class="footer-right">License Expires: <span id="footer-license-expiry">—</span></div>
+    </footer>
 
     <div id="calibration-controls">
         <h3>SVG Calibration</h3>
@@ -616,7 +547,7 @@
         let appData=null, currentDay=1, currentComponentId=null, currentFailureModeIndex=null;
         let chartRel=null, chartFR=null, maintenanceLog={};
 
-        function setDataStatus(l){const e=document.getElementById('data-status');e.innerText=l?"Data: Loaded":"Data: Not Loaded";e.className="status-indicator "+(l?"status-loaded":"status-unloaded");}
+        function setDataStatus(l){const e=document.getElementById('data-status');if(!e)return;e.innerText=l?"Data: Loaded":"Data: Not Loaded";}
         function loadMaintenanceLog(){const s=localStorage.getItem('rcm_maintenance_log');if(s){try{maintenanceLog=JSON.parse(s);}catch(e){}}}
         function saveMaintenanceLog(){localStorage.setItem('rcm_maintenance_log',JSON.stringify(maintenanceLog));}
         function download(name,obj){const u="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(obj,null,2));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();}
@@ -627,13 +558,54 @@
         function getDaysOffset(ds){if(!ds)return 0;const a=new Date(ds),t=new Date();a.setHours(0,0,0,0);t.setHours(0,0,0,0);const d=Math.ceil((t-a)/86400000);return d>0?d:0;}
         function getEffectiveDay(s,c,i){const n=appData.components[c].failureModes[i].name;const d=maintenanceLog[c]?maintenanceLog[c][n]:null;return s+getDaysOffset(d);}
 
+        function clearAllMaintenance(){
+            if(!appData){alert('No data loaded.');return;}
+            if(confirm('This erases ALL Last Maintenance dates for ALL components. Continue?')){
+                maintenanceLog={};saveMaintenanceLog();updateDiagramColors();
+                if(document.getElementById('view-table').classList.contains('active') && currentComponentId) renderTable(currentComponentId);
+                alert('All maintenance data cleared.');
+            }
+        }
+        function clearComponentMaintenance(){
+            if(!currentComponentId){alert('No component selected.');return;}
+            if(confirm('This erases ALL Last Maintenance dates for '+currentComponentId+'. Continue?')){
+                if(maintenanceLog) delete maintenanceLog[currentComponentId];
+                saveMaintenanceLog();updateDiagramColors();renderTable(currentComponentId);
+                alert('Maintenance data for '+currentComponentId+' cleared.');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded',()=>{
+            document.addEventListener('keydown',function(ev){if((ev.ctrlKey||ev.metaKey)&&ev.shiftKey&&(ev.key==='L'||ev.key==='l')){ev.preventDefault();ev.stopPropagation();toggleCalibration();}});
             loadMaintenanceLog();
             if(EMBEDDED_BRAND_C_B64)document.getElementById('branding-copyright').innerHTML=atob(EMBEDDED_BRAND_C_B64);
             if(EMBEDDED_BRAND_P_B64)document.getElementById('branding-powered').innerHTML=atob(EMBEDDED_BRAND_P_B64);
-            if(EMBEDDED_DATA){try{const p=atob(EMBEDDED_PWD_B64);const s=CryptoJS.AES.decrypt(EMBEDDED_DATA,p).toString(CryptoJS.enc.Utf8);if(s){appData=JSON.parse(s);document.getElementById('day-slider').max=appData.maxDays||365;document.getElementById('login-modal').style.display='none';document.getElementById('global-slider').style.display='flex';setDataStatus(true);updateDiagramColors();}}catch(e){console.error("Auto-load failed:",e);}}
+            
+            if (typeof EMBEDDED_DATA !== 'undefined' && EMBEDDED_DATA) {
+                try {
+                    const pwd = atob(EMBEDDED_PWD_B64);
+                    const bytes = CryptoJS.AES.decrypt(EMBEDDED_DATA, pwd);
+                    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+                    if (decryptedString) {
+                        appData = JSON.parse(decryptedString);
+                        document.getElementById('day-slider').max = appData.maxDays || 365;
+                        document.getElementById('global-slider').style.display = 'flex';
+                        setDataStatus(true);
+                        updateDiagramColors();
+                    }
+                } catch (err) { console.error("Auto-load failed:", err); }
+                const modal = document.getElementById('login-modal');
+                if (modal) modal.remove();
+            }
+
             document.querySelectorAll('.clickable-area').forEach(el=>el.addEventListener('click',e=>{if(document.body.classList.contains('calibration-mode'))return;const id=e.target.id;if(appData&&appData.components[id]){currentComponentId=id;renderTable(id);switchView('table');}else if(!appData)alert("Data is not loaded.");else alert("No data for "+id);}));
-            document.getElementById('day-slider').addEventListener('input',e=>{currentDay=parseInt(e.target.value);document.getElementById('day-value').innerText=currentDay;updateCurrentDayLines();updateUI();});
+            document.getElementById('day-slider').addEventListener('input',e=>{
+                currentDay=parseInt(e.target.value);
+                document.getElementById('day-value').innerText=currentDay;
+                try{ updateCurrentDayLines(); }catch(err){}
+                updateDiagramColors();
+                updateUI();
+            });
             const cs=document.getElementById('calib-select');document.querySelectorAll('.clickable-area').forEach(el=>{const o=document.createElement('option');o.value=el.id;o.text=el.id;cs.appendChild(o);});
             cs.addEventListener('change',updateCalibrationInputs);['calib-x','calib-y','calib-w','calib-h'].forEach(id=>document.getElementById(id).addEventListener('change',applyCalibration));updateCalibrationInputs();
         });
@@ -642,7 +614,7 @@
         function updateCalibrationInputs(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);document.getElementById('calib-x').value=el.getAttribute('x');document.getElementById('calib-y').value=el.getAttribute('y');document.getElementById('calib-w').value=el.getAttribute('width');document.getElementById('calib-h').value=el.getAttribute('height');}
         function applyCalibration(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);el.setAttribute('x',document.getElementById('calib-x').value);el.setAttribute('y',document.getElementById('calib-y').value);el.setAttribute('width',document.getElementById('calib-w').value);el.setAttribute('height',document.getElementById('calib-h').value);}
         function exportCalibration(){let s='<svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">\n';document.querySelectorAll('.clickable-area').forEach(el=>{s+='  <rect id="'+el.id+'" class="clickable-area" x="'+el.getAttribute('x')+'" y="'+el.getAttribute('y')+'" width="'+el.getAttribute('width')+'" height="'+el.getAttribute('height')+'" />\n';});s+='</svg>';document.getElementById('calib-output').value=s;}
-        function decryptAndLoad(){const fi=document.getElementById('file-input'),pw=document.getElementById('password-input').value,em=document.getElementById('login-error');if(!fi.files[0]){em.innerText="Select a data file.";return;}if(!pw){em.innerText="Enter a password.";return;}const r=new FileReader();r.onload=e=>{try{const s=CryptoJS.AES.decrypt(e.target.result,pw).toString(CryptoJS.enc.Utf8);if(!s)throw new Error("Wrong password");appData=JSON.parse(s);document.getElementById('day-slider').max=appData.maxDays||365;document.getElementById('login-modal').style.display='none';document.getElementById('global-slider').style.display='flex';setDataStatus(true);updateDiagramColors();}catch(x){em.innerText="Error: "+x.message;}};r.readAsText(fi.files[0]);}
+        
         function switchView(v){
             document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
             document.getElementById('view-'+v).classList.add('active');
@@ -663,15 +635,10 @@
             const tb=document.querySelector('#fm-table tbody');tb.innerHTML='';
             comp.failureModes.forEach((fm,i)=>{
                 const ed=getEffectiveDay(currentDay,c,i),st=getStatusColor(ed,fm.thresholds),sd=maintenanceLog[c]?maintenanceLog[c][fm.name]:'';
-                
-                // FIX 3: Add blue dot icon if actual data exists
-                let fmNameHtml = fm.name;
-                if (fm.actualData && fm.actualData.length > 0) {
-                    fmNameHtml += ' <span class="actual-data-icon" title="Contains actual failure data">●</span>';
-                }
-
+                let seqNum = (i + 1).toString();
+                let actualDataIcon = (fm.actualData && fm.actualData.length > 0) ? '<span style="color: #3498db; font-size: 1.2rem; line-height: 1; vertical-align: middle; margin-right: 4px;" title="Contains actual failure data">●</span>' : '';
                 const tr=document.createElement('tr');tr.setAttribute('data-fm-index',i);
-                tr.innerHTML='<td>'+(i+1)+'</td><td>'+fmNameHtml+'</td><td>'+fm.cause+'</td><td>'+fm.category+'</td><td>'+fm.targetRt+'%</td><td>'+fm.taskList+'</td><td>'+fm.mtbfDays.toFixed(1)+'</td><td><input type="date" class="maint-date-input" value="'+sd+'"></td><td class="status-cell status-'+st+'">'+st.toUpperCase()+'</td>';
+                tr.innerHTML='<td style="text-align:right">' + actualDataIcon + seqNum + '</td><td>'+fm.name+'</td><td>'+fm.cause+'</td><td>'+fm.category+'</td><td>'+fm.targetRt+'%</td><td>'+fm.taskList+'</td><td>'+fm.mtbfDays.toFixed(1)+'</td><td><input type="date" class="maint-date-input" value="'+sd+'"></td><td class="status-cell status-'+st+'">'+st.toUpperCase()+'</td>';
                 tr.querySelector('.maint-date-input').addEventListener('change',e=>handleDateChange(c,i,e.target.value));
                 tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){currentFailureModeIndex=i;switchView('charts');}});
                 tb.appendChild(tr);
@@ -682,14 +649,11 @@
         function renderCharts(){
             const comp=appData.components[currentComponentId], fm=comp.failureModes[currentFailureModeIndex];
             document.getElementById('chart-title').innerText=currentComponentId+' - '+fm.name;
-            const detailsDiv = document.getElementById('chart-fm-details');
-            detailsDiv.innerHTML = `<strong>Cause:</strong> ${fm.cause}<br><strong>Task List:</strong> ${fm.taskList}`;
-            
+            document.getElementById('chart-fm-details').innerHTML = `<strong>Cause:</strong> ${fm.cause}<br><strong>Task List:</strong> ${fm.taskList}`;
             let targetRt=parseFloat(fm.targetRt)||99.0, targetDay=parseFloat(fm.targetDay);
             const maxDays=Math.max(...fm.days);
             const yMin=(fm.chartYMin!=null)?fm.chartYMin:0;
             const xMaxRel=(fm.chartXMax!=null)?fm.chartXMax:maxDays;
-            
             if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){for(let i=0;i<fm.reliabilityData.length-1;i++){if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;}}}
             const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
             const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
@@ -728,6 +692,62 @@
             chartFR.update('none');
         }
         function updateUI(){if(document.getElementById('view-diagram').classList.contains('active'))updateDiagramColors();else if(document.getElementById('view-table').classList.contains('active'))renderTable(currentComponentId);}
-    </script>
+
+        // Function to read CADEN data and update the UI (Polls every 1 second)
+        
+    
+// --- CADEN footer info: JWT first, then genesis+trial fallback ---
+(function(){
+    var tries = 0, MAX = 20, dumped = false;
+    function findUser(){
+        var raw = localStorage.getItem('RCM_USER_INFO') || localStorage.getItem('RCM_DASHBOARD_USER_INFO');
+        if(raw){ try{ var u=JSON.parse(raw); if(u && u.name) return u.name; }catch(e){} }
+        return null;
+    }
+    function decodeJwtExp(tok){
+        try{
+            var p = tok.split('.')[1];
+            p = p.replace(/-/g,'+').replace(/_/g,'/');
+            while(p.length%4) p+='=';
+            var json = decodeURIComponent(atob(p).split('').map(function(c){
+                return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            var pl = JSON.parse(json);
+            return pl && pl.exp ? new Date(pl.exp*1000).toLocaleString() : null;
+        }catch(e){ return null; }
+    }
+    function findExpiry(){
+        // 1) JWT path
+        var tok = localStorage.getItem('RCM_AUTH_TOKEN') || localStorage.getItem('RCM_DASHBOARD_AUTH_TOKEN');
+        if(tok){ var e=decodeJwtExp(tok); if(e) return {src:'JWT',val:e}; }
+        // 2) Genesis + trial-days path (CADEN trial model)
+        try{
+            var gb = JSON.parse(localStorage.getItem('RCM_GENESIS_BUNCH') || '{}');
+            var td = parseInt(localStorage.getItem('RCM_SERVER_TRIAL_DAYS') || '0', 10);
+            if(gb && gb.genesisEpoch && td > 0){
+                var expMs = gb.genesisEpoch + (td * 86400000);
+                return {src:'Genesis+'+td+'d', val: new Date(expMs).toLocaleString()};
+            }
+        }catch(e){}
+        return null;
+    }
+    function render(){
+        var name = findUser(), expInfo = findExpiry();
+        var nEl = document.getElementById('footer-user-name') || document.getElementById('caden-display-name');
+        var eEl = document.getElementById('footer-license-expiry') || document.getElementById('caden-display-expiry');
+        if(nEl && name) nEl.innerText = name;
+        if(eEl && expInfo) eEl.innerText = expInfo.val;
+        if(!dumped){
+            console.log('🔍 localStorage keys:', Object.keys(localStorage));
+            console.log('   user:', name, '| expiry:', expInfo ? expInfo.val+' ['+expInfo.src+']' : 'null');
+            dumped = true;
+        }
+        if(name && expInfo){ clearInterval(iv); console.log('🏁 CADEN info loaded.'); }
+        else if(++tries >= MAX){ clearInterval(iv); console.warn('⚠️ CADEN token still not found after', MAX, 'tries. Stopping poll.'); }
+    }
+    render();
+    var iv = setInterval(render, 1000);
+})();
+</script>
 </body>
 </html>

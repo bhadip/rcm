@@ -1,7 +1,7 @@
-# Version: v0.6.10
+# Version: v0.6.12
 import openpyxl, json, os, hashlib, base64, sys
 
-print("build_data.py Version: v0.6.10")
+print("build_data.py Version: v0.6.12")
 
 if len(sys.argv) < 2:
     print("Usage: python3 build_data.py <excel_filename>")
@@ -11,8 +11,9 @@ INPUT_EXCEL = sys.argv[1]
 OUTPUT_FILE = "data.enc"
 PASSWORD = "Brawijaya2026!"
 
-# Global flag to track errors across all sheets
-build_failed = False
+# Global counters for the final summary
+total_errors = 0
+total_warnings = 0
 
 def safe_float(val, default=0.0):
     if val is None: return default
@@ -39,11 +40,10 @@ def encrypt_data(data_dict, password):
     return base64.b64encode(b"Salted__" + salt + ct).decode('utf-8')
 
 def parse_sheet(ws, sheet_name):
-    global build_failed
+    global total_errors, total_warnings
     component_data = {"failureModes": []}
     fm_list = []
     
-    # 1. Identify all Failure Modes
     for r in range(1, ws.max_row + 1):
         v = ws.cell(row=r, column=2).value
         if v and str(v).strip().startswith("Failure Mode:"):
@@ -54,7 +54,6 @@ def parse_sheet(ws, sheet_name):
         return None
     print(f"  -> Found {len(fm_list)} Failure Modes.")
 
-    # 2. Global ordered search for "Y(min)" and "X(max)"
     y_min_values = []
     x_max_values = []
     for r in range(1, ws.max_row + 1):
@@ -67,7 +66,6 @@ def parse_sheet(ws, sheet_name):
                 elif "x(max)" in s:
                     x_max_values.append(safe_float(ws.cell(row=r, column=c+1).value, None))
 
-    # 3. Global ordered search for "Target" blocks (Column E)
     target_blocks = []
     for r in range(1, ws.max_row + 1):
         val_e = ws.cell(row=r, column=5).value
@@ -76,12 +74,7 @@ def parse_sheet(ws, sheet_name):
             day_val = safe_float(ws.cell(row=r, column=7).value, None)
             yellow_val = safe_float(ws.cell(row=r, column=9).value, 0)
             red_val = safe_float(ws.cell(row=r, column=10).value, 0)
-            target_blocks.append({
-                "rt": rt_val,
-                "day": day_val,
-                "yellow": yellow_val,
-                "red": red_val
-            })
+            target_blocks.append({"rt": rt_val, "day": day_val, "yellow": yellow_val, "red": red_val})
 
     if len(target_blocks) != len(fm_list):
         print(f"  WARNING: Found {len(target_blocks)} 'Target' blocks, expected {len(fm_list)}.")
@@ -91,7 +84,6 @@ def parse_sheet(ws, sheet_name):
     for i, fm in enumerate(fm_list):
         row = fm['row']
         
-        # Assign Target data if available
         if i < len(target_blocks):
             fm_obj = {
                 "name": fm['name'],
@@ -103,10 +95,7 @@ def parse_sheet(ws, sheet_name):
                 "chartYMin": y_min_values[i] if i < len(y_min_values) else None,
                 "chartXMax": x_max_values[i] if i < len(x_max_values) else None,
                 "targetDay": target_blocks[i]["day"],
-                "thresholds": {
-                    "yellow": target_blocks[i]["yellow"],
-                    "red": target_blocks[i]["red"]
-                },
+                "thresholds": {"yellow": target_blocks[i]["yellow"], "red": target_blocks[i]["red"]},
                 "actualData": [],
             }
         else:
@@ -124,7 +113,6 @@ def parse_sheet(ws, sheet_name):
                 "actualData": [],
             }
 
-        # Extract Time Series
         day_col, rel_col, fr_col = 12 + i*3, 13 + i*3, 14 + i*3
         days, rel, fr = [], [], []
         for r in range(4, 2000):
@@ -137,7 +125,6 @@ def parse_sheet(ws, sheet_name):
                 break
         fm_obj["days"], fm_obj["reliabilityData"], fm_obj["failureRateData"] = days, rel, fr
 
-        # Extract Actual Data Block
         found_actual = False
         for c in range(start_search_col, ws.max_column + 1):
             if found_actual: break
@@ -165,7 +152,6 @@ def parse_sheet(ws, sheet_name):
 
         component_data["failureModes"].append(fm_obj)
 
-    # Consistency Report
     print(f"  --- Consistency Report: {sheet_name} ({len(component_data['failureModes'])} FMs processed) ---")
     total_actual_points = 0
     
@@ -177,15 +163,17 @@ def parse_sheet(ws, sheet_name):
         x_max_str = f"{fm['chartXMax']:,.0f}"
         rt_str = f"{fm['targetRt']}" if fm['targetRt'] is not None else "MISSING"
         day_str = f"{fm['targetDay']:,.0f}" if fm['targetDay'] is not None else "MISSING"
+        default_x_str = f"{max(fm['days']):,.0f}" if fm["days"] else "1,000"
 
-        # Check for missing time-series data
         if not fm["days"]:
             print(f"    ERROR: '{fm['name']}' has NO time-series data.")
-            build_failed = True
-        # Check for missing targetDay
+            total_errors += 1
         elif fm["targetDay"] is None or fm["targetDay"] <= 0:
             print(f"    ERROR: '{fm['name']}' missing targetDay! (TargetRt={rt_str})")
-            build_failed = True
+            total_errors += 1
+        elif fm["chartYMin"] == 0.0 and x_max_str == default_x_str:
+            print(f"    WARN : '{fm['name']}' Parameter Grafik missing -> defaults used. (TargetRt={rt_str}, TargetDay={day_str})")
+            total_warnings += 1
         else:
             print(f"    OK   : '{fm['name']}' Ymin={y_min_str}, Xmax={x_max_str}, TargetRt={rt_str}, TargetDay={day_str}, Yellow={fm['thresholds']['yellow']}, Red={fm['thresholds']['red']}")
             
@@ -195,6 +183,7 @@ def parse_sheet(ws, sheet_name):
             
     if total_actual_points == 0:
         print(f"  ⚠️ WARNING: No actual data found for any FM in '{sheet_name}'!")
+        total_warnings += 1
         
     print("  ------------------------------------------")
     return component_data
@@ -213,12 +202,22 @@ if __name__ == "__main__":
         
     wb.close()
     
-    # Abort AFTER checking all sheets in the Excel file
-    if build_failed:
-        print(f"\n❌ BUILD ABORTED: Critical errors found in the Excel file. Please fix the data and rebuild.")
+    # FINAL SUMMARY BLOCK
+    print("\n" + "="*60)
+    print(" 📊 BUILD SUMMARY")
+    print("="*60)
+    print(f" Total Errors:   {total_errors}")
+    print(f" Total Warnings: {total_warnings}")
+    print("="*60 + "\n")
+    
+    if total_errors > 0:
+        print("❌ BUILD ABORTED: Critical errors found. Please fix the Excel file.")
         sys.exit(1)
         
-    print("\nEncrypting data...")
+    print("Encrypting data...")
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(encrypt_data(app_data, PASSWORD))
+    import json
+    with open("build_info.json","w",encoding="utf-8") as bf:
+        json.dump({"source_excel":os.path.basename(INPUT_EXCEL),"build_data_version":"v0.6.12"}, bf, indent=2)
     print(f"Success! {OUTPUT_FILE} created from {INPUT_EXCEL}.")

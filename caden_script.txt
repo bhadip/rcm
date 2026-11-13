@@ -1,7 +1,7 @@
 <!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.3) -->
 <script>
 (function () {
-    const CADEN_VERSION = "0.6.4";
+    const CADEN_VERSION = "0.6.5";
     const CADEN_CONFIG = {
         appId: "RCM",
         appVersion: typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown',
@@ -45,11 +45,8 @@
                     return 'Not supported';
                 } catch (e) { return 'Error'; }
             })(),
-            appVersion: CADEN_CONFIG.appVersion,
             cadenVersion: CADEN_VERSION,
-            buildDataVersion: typeof RCM_BUILD_META !== 'undefined' ? RCM_BUILD_META.buildDataVersion : 'Unknown',
-            embedDataVersion: typeof RCM_BUILD_META !== 'undefined' ? RCM_BUILD_META.embedDataVersion : 'Unknown',
-            sourceExcelFile: typeof RCM_BUILD_META !== 'undefined' ? RCM_BUILD_META.sourceExcelFile : 'Unknown'
+            ...((typeof APP_BUILD_META !== 'undefined') ? APP_BUILD_META : ((typeof RCM_BUILD_META !== 'undefined') ? RCM_BUILD_META : {}))
         };
     }
 
@@ -198,6 +195,30 @@
                     CADEN_CONFIG.trialDays = data.trial_days;
                     localStorage.setItem(KEYS.serverTrialDays, data.trial_days);
                 }
+                if (data.owner_name) {
+                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                    currentInfo.name = data.owner_name;
+                    currentInfo.email = data.owner_email;
+                    currentInfo.whatsapp = data.owner_whatsapp;
+                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
+                }
+
+                if (data.owner_name) {
+                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                    currentInfo.name = data.owner_name;
+                    currentInfo.email = data.owner_email;
+                    currentInfo.whatsapp = data.owner_whatsapp;
+                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
+                }
+
+                if (data.owner_name) {
+                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                    currentInfo.name = data.owner_name;
+                    currentInfo.email = data.owner_email;
+                    currentInfo.whatsapp = data.owner_whatsapp;
+                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
+                }
+
                 if (data.token) {
                     const existingToken = localStorage.getItem(KEYS.token);
                     if (existingToken) {
