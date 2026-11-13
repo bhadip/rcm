@@ -1,74 +1,76 @@
-<!-- Version: v0.5.8 -->
+<!-- Version: v0.6.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <style> body { opacity: 0; transition: opacity 0.2s ease-in; } </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCM Reliability Dashboard v0.5.8</title>
-    
+    <title>RCM Reliability Dashboard v0.6.2</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F172A'/%3E%3Cpath d='M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z' fill='%231E293B' stroke='%233B82F6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%2310B981' stroke-width='4'/%3E%3Cpath d='M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34' stroke='%2310B981' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-    
     <script src="crypto-js.min.js"></script>
     <script src="chart.umd.js"></script>
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --bg: #f4f6f9; --card-bg: #ffffff; --green: #2ecc71; --yellow: #f1c40f; --red: #e74c3c; --text: #333; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
-        header { background-color: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding-right: 170px; }
-        header h1 { margin: 0; font-size: 1.2rem; }
-        .version-badge { background-color: var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 10px; }
-        .status-indicator { font-size: 0.9rem; margin-right: 15px; font-weight: bold; }
-        .status-loaded { color: #2ecc71; } .status-unloaded { color: #e74c3c; }
-        footer { margin-top: auto; background-color: var(--secondary); color: #bdc3c7; text-align: center; padding: 10px; font-size: 0.85rem; }
-        #app-container { flex: 1; padding: 20px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-        .view { display: none; } .view.active { display: block; }
-        .card { background: var(--card-bg); border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .btn { background-color: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1rem; transition: background 0.2s; margin-right: 5px; }
-        .btn:hover { background-color: #2980b9; } .btn-secondary { background-color: #95a5a6; }
-        .btn-success { background-color: #27ae60; } .btn-success:hover { background-color: #219150; }
-        #login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .login-box { background: white; padding: 30px; border-radius: 10px; width: 300px; text-align: center; }
-        .login-box input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        #diagram-wrapper { position: relative; width: 100%; max-width: 1300px; margin: 0 auto; }
-        #diagram-wrapper img { width: 100%; display: block; }
-        #diagram-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .clickable-area { fill: transparent; stroke: transparent; stroke-width: 2px; cursor: pointer; pointer-events: auto; transition: all 0.2s ease; }
-        .clickable-area:hover { fill: rgba(0, 123, 255, 0.15); stroke: #007bff; stroke-dasharray: 5,5; }
-        .comp-green { fill: rgba(46, 204, 113, 0.4) !important; stroke: #2ecc71 !important; }
-        .comp-yellow { fill: rgba(241, 196, 15, 0.4) !important; stroke: #f1c40f !important; }
-        .comp-red { fill: rgba(231, 76, 60, 0.4) !important; stroke: #e74c3c !important; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; font-weight: 600; }
-        tr:hover { background-color: #f1f1f1; }
-        .status-cell { font-weight: bold; text-align: center; }
-        .status-green { color: var(--green); } .status-yellow { color: #d4ac0d; } .status-red { color: var(--red); }
-        .slider-container { background: white; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; bottom: 20px; z-index: 100; }
-        .slider-container input[type=range] { flex: 1; }
-        .day-display { font-weight: bold; min-width: 120px; text-align: right; }
-        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
-        .chart-box { background: white; padding: 15px; border-radius: 8px; height: 400px; }
-        .calibration-mode #diagram-overlay { pointer-events: auto; }
-        .calibration-mode .clickable-area { fill: rgba(255, 0, 0, 0.2); stroke: red; cursor: move; }
-        #calibration-controls { display: none; position: fixed; top: 70px; right: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 500; max-width: 300px; }
-        .calibration-mode #calibration-controls { display: block; }
-        #calibration-controls label { display: block; margin: 5px 0; font-size: 0.9rem; }
-        #calibration-controls select, #calibration-controls input { width: 100%; padding: 5px; margin: 5px 0; }
-        .maint-date-input { padding: 5px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        .log-controls { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .log-controls-group { display: flex; gap: 10px; align-items: center; border-right: 1px solid #ddd; padding-right: 15px; }
-        .log-controls-group:last-child { border-right: none; }
+        :root { --primary:#2c3e50; --secondary:#34495e; --accent:#3498db; --bg:#f4f6f9; --card-bg:#fff; --green:#2ecc71; --yellow:#f1c40f; --red:#e74c3c; --text:#333; }
+        body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; margin:0; padding:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
+        header { background:var(--primary); color:#fff; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,.1); padding-right:170px; }
+        header h1 { margin:0; font-size:1.2rem; }
+        .version-badge { background:var(--accent); padding:4px 8px; border-radius:4px; font-size:.8rem; font-weight:bold; margin-left:10px; }
+        .status-indicator { font-size:.9rem; margin-right:15px; font-weight:bold; }
+        .status-loaded{color:#2ecc71;} .status-unloaded{color:#e74c3c;}
+        footer { margin-top:auto; background:var(--secondary); color:#bdc3c7; text-align:center; padding:10px; font-size:.85rem; }
+        #app-container { flex:1; padding:20px; max-width:1400px; margin:0 auto; width:100%; box-sizing:border-box; }
+        .view{display:none;} .view.active{display:block;}
+        .card { background:var(--card-bg); border-radius:8px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); margin-bottom:20px; }
+        .btn { background:var(--accent); color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-size:1rem; margin-right:5px; }
+        .btn:hover{background:#2980b9;} .btn-secondary{background:#95a5a6;} .btn-success{background:#27ae60;}
+        #login-modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; justify-content:center; align-items:center; z-index:1000; }
+        .login-box { background:#fff; padding:30px; border-radius:10px; width:300px; text-align:center; }
+        .login-box input { width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box; }
+        #diagram-wrapper { position:relative; width:100%; max-width:1300px; margin:0 auto; }
+        #diagram-wrapper img { width:100%; display:block; }
+        #diagram-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+        .clickable-area { fill:transparent; stroke:transparent; stroke-width:2px; cursor:pointer; pointer-events:auto; transition:all .2s ease; }
+        .clickable-area:hover { fill:rgba(0,123,255,.15); stroke:#007bff; stroke-dasharray:5,5; }
+        .comp-green{fill:rgba(46,204,113,.4)!important;stroke:#2ecc71!important;}
+        .comp-yellow{fill:rgba(241,196,15,.4)!important;stroke:#f1c40f!important;}
+        .comp-red{fill:rgba(231,76,60,.4)!important;stroke:#e74c3c!important;}
+        table { width:100%; border-collapse:collapse; margin-top:10px; }
+        th,td { padding:12px; text-align:left; border-bottom:1px solid #eee; }
+        th { background:#f8f9fa; font-weight:600; }
+        tr:hover { background:#f1f1f1; }
+        .status-cell { font-weight:bold; text-align:center; }
+        .status-green{color:var(--green);} .status-yellow{color:#d4ac0d;} .status-red{color:var(--red);}
+        .slider-container { background:#fff; padding:15px; border-radius:8px; display:flex; align-items:center; gap:15px; box-shadow:0 2px 5px rgba(0,0,0,.05); position:sticky; bottom:20px; z-index:100; flex-wrap:wrap; }
+        .slider-container input[type=range] { flex:1; min-width:200px; }
+        .day-display { font-weight:bold; min-width:120px; text-align:right; }
+        .slider-note { font-size:.85rem; color:#7f8c8d; font-style:italic; width:100%; margin-top:5px; }
+        .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+        @media (max-width:768px){ .charts-grid{grid-template-columns:1fr;} }
+        .chart-box { background:#fff; padding:15px; border-radius:8px; height:400px; }
+        .calibration-mode #diagram-overlay{pointer-events:auto;}
+        .calibration-mode .clickable-area{fill:rgba(255,0,0,.2);stroke:red;cursor:move;}
+        #calibration-controls{display:none;position:fixed;top:70px;right:20px;background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:500;max-width:300px;}
+        .calibration-mode #calibration-controls{display:block;}
+        #calibration-controls label{display:block;margin:5px 0;font-size:.9rem;}
+        #calibration-controls select,#calibration-controls input{width:100%;padding:5px;margin:5px 0;}
+        .maint-date-input{padding:5px;border:1px solid #ddd;border-radius:4px;width:100%;box-sizing:border-box;}
+        .log-controls{margin-bottom:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+        .log-controls-group{display:flex;gap:10px;align-items:center;border-right:1px solid #ddd;padding-right:15px;}
+        .log-controls-group:last-child{border-right:none;}
+        .fm-details { margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9rem; }
+        .fm-details strong { color: var(--primary); }
+        .actual-data-icon { color: #3498db; font-size: 1.2rem; cursor: help; margin-left: 5px; vertical-align: middle; }
     </style>
-<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.5.9) -->
+
+<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.2) -->
 <script>
 (function () {
-    const CADEN_VERSION = "0.5.9";
+    const CADEN_VERSION = "0.6.2";
     const CADEN_CONFIG = {
         appId: "RCM_DASHBOARD",
         serverUrl: "https://caden.prasanti.com",
         wssUrl: "wss://caden.prasanti.com/v1/stream",
-        fallbackGraceDays: 30,
+        trialDays: 3, 
         logLevel: 2
     };
 
@@ -79,8 +81,9 @@
         logs: `${CADEN_CONFIG.appId}_LOG_BUFFER`,
         uuid: `${CADEN_CONFIG.appId}_PERSISTENT_UUID`,
         userInfo: `${CADEN_CONFIG.appId}_USER_INFO`,
-        serverGraceDays: `${CADEN_CONFIG.appId}_SERVER_GRACE_DAYS`,
-        appealStatus: `${CADEN_CONFIG.appId}_APPEAL_STATUS`
+        serverTrialDays: `${CADEN_CONFIG.appId}_SERVER_TRIAL_DAYS`,
+        appealStatus: `${CADEN_CONFIG.appId}_APPEAL_STATUS`,
+        revokedStatus: `${CADEN_CONFIG.appId}_IS_REVOKED` // NEW: Local persistence for revocation
     };
 
     function revealApp() {
@@ -190,9 +193,33 @@
             } else {
                 localStorage.setItem(KEYS.genesis, JSON.stringify({ genesisEpoch: Date.now(), boundApp: CADEN_CONFIG.appId }));
                 window.storeSystemTelemetry("REGISTRATION", `User registered: ${name}`, 2);
-                autoActivate();
+                autoActivate().then(() => {
+                    showTrialDeadlineMessage();
+                });
             }
         };
+    }
+
+    function showTrialDeadlineMessage() {
+        if (document.getElementById('caden-trial-msg')) return;
+        const expiryDate = new Date(Date.now() + (CADEN_CONFIG.trialDays * 24 * 60 * 60 * 1000));
+        const dd = String(expiryDate.getDate()).padStart(2, '0');
+        const mm = String(expiryDate.getMonth() + 1).padStart(2, '0');
+        const yy = String(expiryDate.getFullYear()).slice(-2);
+        const hh = String(expiryDate.getHours()).padStart(2, '0');
+        const min = String(expiryDate.getMinutes()).padStart(2, '0');
+        const dateStr = `${dd}/${mm}/${yy} ${hh}:${min}`;
+
+        const msg = document.createElement('div');
+        msg.id = 'caden-trial-msg';
+        msg.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1e293b;border:1px solid #3b82f6;color:white;padding:20px;border-radius:8px;z-index:99999;font-family:sans-serif;font-size:14px;box-shadow:0 4px 6px rgba(0,0,0,0.3);max-width:300px;';
+        msg.innerHTML = `
+            <div style="color:#3b82f6;font-weight:bold;margin-bottom:10px;font-size:16px;">✅ Trial Started</div>
+            <div style="margin-bottom:10px;line-height:1.5;">You are in a <b>${CADEN_CONFIG.trialDays}-day trial period</b>.</div>
+            <div style="color:#fbbf24;font-size:13px;line-height:1.4;">⚠️ You must connect to the internet before <b>${dateStr}</b> to complete registration and continue using the app.</div>
+            <button onclick="this.parentElement.remove()" style="margin-top:15px;width:100%;padding:8px;background:#334155;color:white;border:none;border-radius:4px;cursor:pointer;">I Understand</button>
+        `;
+        document.body.appendChild(msg);
     }
 
     async function submitRevocationAppeal(name, email, wa) {
@@ -202,6 +229,7 @@
             const response = await fetch(url, { method: 'POST' });
             if (response.ok) {
                 localStorage.setItem(KEYS.appealStatus, 'PENDING');
+                // Note: revokedStatus remains true until admin approves
                 window.storeSystemTelemetry("APPEAL_SUBMITTED", `Appeal submitted by ${name}`, 2);
                 _doLockdown("Appeal submitted successfully. Awaiting administrator approval. Please close this application.");
             } else {
@@ -232,15 +260,14 @@
                     errorDetail = errData.detail || "";
                 } catch(e) {}
 
+                // CRITICAL: Persist revocation locally
+                localStorage.setItem(KEYS.revokedStatus, 'true');
+
                 if (errorDetail === "APPEAL_PENDING") {
+                    localStorage.setItem(KEYS.appealStatus, 'PENDING');
                     _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
                 } else {
-                    const appealStatus = localStorage.getItem(KEYS.appealStatus);
-                    if (appealStatus === 'PENDING') {
-                        _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-                    } else {
-                        showRegistrationModal(true);
-                    }
+                    showRegistrationModal(true);
                 }
                 return;
             }
@@ -248,13 +275,15 @@
             if (response.ok) {
                 const data = await response.json();
                 
-                if (data.status === 'ACTIVE' && localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
+                // If server says we are active, clear local revocation flags
+                if (data.status === 'ACTIVE') {
+                    localStorage.removeItem(KEYS.revokedStatus);
                     localStorage.removeItem(KEYS.appealStatus);
                 }
 
-                if (data.grace_days) {
-                    CADEN_CONFIG.fallbackGraceDays = data.grace_days;
-                    localStorage.setItem(KEYS.serverGraceDays, data.grace_days);
+                if (data.trial_days) {
+                    CADEN_CONFIG.trialDays = data.trial_days;
+                    localStorage.setItem(KEYS.serverTrialDays, data.trial_days);
                 }
                 
                 if (data.token) {
@@ -280,8 +309,16 @@
             }
         } catch (err) { 
             window.storeSystemTelemetry("ACTIVATION_ERROR", `Failed: ${err.message}`, 1);
-            if (localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) {
+            // Failsafe: Only reveal if we have a token AND we are NOT locally revoked
+            if ((localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) && !localStorage.getItem(KEYS.revokedStatus)) {
                 revealApp();
+            } else if (localStorage.getItem(KEYS.revokedStatus)) {
+                // If offline and revoked, show appropriate screen
+                if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
+                    _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
+                } else {
+                    showRegistrationModal(true);
+                }
             } else {
                 showRegistrationModal(false);
             }
@@ -310,18 +347,27 @@
         document.body.style.opacity = '1';
         document.body.style.pointerEvents = 'auto';
         document.body.innerHTML = `<div style="font-family:sans-serif; text-align:center; padding:100px; background:#0f172a; color:#f8fafc; height:100vh; margin:0;"><div style="max-width:500px; margin:0 auto; border:1px solid #334155; padding:40px; border-radius:8px; background:#1e293b;"><h2 style="color:#ef4444; margin-top:0;">CADEN Governance Lockdown</h2><p style="font-size:15px; line-height:1.6; color:#cbd5e1;">${displayMessage}</p><div style="margin-top:25px; font-size:12px; color:#64748b;">Device ID: ${generateDeviceFingerprint()} | Script v${CADEN_VERSION}</div></div></div>`;
-        
-        // CRITICAL FIX: Re-inject badge after DOM wipe
         injectCADENBadge();
     }
 
     function runSecurityGovernanceEvaluation() {
         if (!assertChronologicalIntegrity()) return false;
+        
+        // CRITICAL: Check local revocation status FIRST
+        if (localStorage.getItem(KEYS.revokedStatus) === 'true') {
+            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
+                _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
+            } else {
+                showRegistrationModal(true); // Show appeal form immediately, even if offline
+            }
+            return false;
+        }
+
         const activeToken = localStorage.getItem(KEYS.token);
         const initialActivationRecord = localStorage.getItem(KEYS.genesis);
 
-        const serverGrace = localStorage.getItem(KEYS.serverGraceDays);
-        if (serverGrace) CADEN_CONFIG.fallbackGraceDays = parseInt(serverGrace);
+        const serverTrialDays = localStorage.getItem(KEYS.serverTrialDays);
+        if (serverTrialDays) CADEN_CONFIG.trialDays = parseInt(serverTrialDays);
 
         if (activeToken) {
             try {
@@ -336,10 +382,10 @@
         if (initialActivationRecord) {
             try {
                 const parsedRecord = JSON.parse(initialActivationRecord);
-                const absoluteGraceLimit = parsedRecord.genesisEpoch + (CADEN_CONFIG.fallbackGraceDays * 24 * 60 * 60 * 1000);
-                if (Date.now() > absoluteGraceLimit) { handleTrialExpiry(); return false; }
+                const absoluteTrialLimit = parsedRecord.genesisEpoch + (CADEN_CONFIG.trialDays * 24 * 60 * 60 * 1000);
+                if (Date.now() > absoluteTrialLimit) { handleTrialExpiry(); return false; }
                 else { if (!navigator.onLine) revealApp(); } 
-            } catch (jsonErr) { executeLockdownScreen("Grace error."); return false; }
+            } catch (jsonErr) { executeLockdownScreen("Trial error."); return false; }
         }
         
         return true;
@@ -366,7 +412,19 @@
         const badge = document.createElement('div');
         badge.id = 'caden-badge';
         badge.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999; opacity: 0.7; transition: opacity 0.3s;';
-        badge.innerHTML = `<div style="background: rgba(30, 41, 59, 0.9); border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer;" onmouseover="this.parentElement.style.opacity='1'" onmouseout="this.parentElement.style.opacity='0.7'"><svg width="20" height="20" viewBox="0 0 100 100" style="flex-shrink: 0;"><path d="M50 5 L90 20 L90 55 C90 80 50 95 50 95 C50 95 10 80 10 55 L10 20 Z" fill="#1D4ED8"/><path d="M50 5 L10 20 L10 55 C10 80 50 95 50 95 Z" fill="#2563EB"/><circle cx="50" cy="38" r="10" fill="none" stroke="#FBBF24" stroke-width="4"/><line x1="50" y1="48" x2="50" y2="78" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="65" x2="62" y2="65" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="73" x2="58" y2="73" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/></svg><span style="color: #94a3b8; font-size: 11px; font-family: sans-serif;">Protected by CADEN</span></div>`;
+        
+        const fullId = generateDeviceFingerprint();
+        const parts = fullId.split('-');
+        const shortId = parts.length >= 3 ? `${parts[1]}-${parts[2]}` : fullId;
+
+        badge.innerHTML = `
+            <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer;" onmouseover="this.parentElement.style.opacity='1'" onmouseout="this.parentElement.style.opacity='0.7'">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 100 100" style="flex-shrink: 0;"><path d="M50 5 L90 20 L90 55 C90 80 50 95 50 95 C50 95 10 80 10 55 L10 20 Z" fill="#1D4ED8"/><path d="M50 5 L10 20 L10 55 C10 80 50 95 50 95 Z" fill="#2563EB"/><circle cx="50" cy="38" r="10" fill="none" stroke="#FBBF24" stroke-width="4"/><line x1="50" y1="48" x2="50" y2="78" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="65" x2="62" y2="65" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="73" x2="58" y2="73" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/></svg>
+                    <span style="color: #94a3b8; font-size: 11px; font-family: sans-serif; font-weight: bold;">Protected by CADEN</span>
+                </div>
+                <div style="color: #64748b; font-size: 9px; font-family: monospace; margin-left: 24px;">ID: ${shortId}</div>
+            </div>`;
         document.body.appendChild(badge);
     }
 
@@ -378,8 +436,16 @@
             socketConnection.onmessage = function(event) {
                 try {
                     const serverMessage = JSON.parse(event.data);
-                    if (serverMessage.directive === "REVOKE_IMMEDIATE") { localStorage.removeItem(KEYS.token); executeLockdownScreen("Device revoked."); }
-                    if (serverMessage.directive === "UPDATE_TOKEN") { localStorage.removeItem(KEYS.token); autoActivate(); }
+                    if (serverMessage.directive === "REVOKE_IMMEDIATE") { 
+                        // CRITICAL: Persist revocation locally immediately
+                        localStorage.setItem(KEYS.revokedStatus, 'true');
+                        localStorage.removeItem(KEYS.token); 
+                        executeLockdownScreen("Device revoked."); 
+                    }
+                    if (serverMessage.directive === "UPDATE_TOKEN") { 
+                        localStorage.removeItem(KEYS.token); 
+                        autoActivate(); 
+                    }
                 } catch(err) {}
             };
             socketConnection.onclose = () => setTimeout(spawnStealthConnectivityBroker, 5000);
@@ -393,11 +459,15 @@
             document.body.style.pointerEvents = 'none';
         }
 
-        // CRITICAL FIX: Inject badge IMMEDIATELY so it exists before any early returns
         injectCADENBadge();
 
-        if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
-            _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
+        // Check local revocation status immediately
+        if (localStorage.getItem(KEYS.revokedStatus) === 'true') {
+            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') {
+                _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
+            } else {
+                showRegistrationModal(true); // Show appeal form even if offline
+            }
             return; 
         }
 
@@ -427,51 +497,49 @@
 </head>
 <body>
     <header>
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink: 0;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;">
                 <rect width="100" height="100" rx="20" fill="#0F172A"/>
                 <path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/>
                 <circle cx="50" cy="50" r="12" fill="none" stroke="#10B981" stroke-width="4"/>
                 <path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
             </svg>
             <h1>RCM Reliability Dashboard</h1>
-            <span class="version-badge">v0.5.8</span>
+            <span class="version-badge">v0.6.2</span>
         </div>
         <div>
             <span id="data-status" class="status-indicator status-unloaded">Data: Not Loaded</span>
-            <span id="user-info" style="font-size: 0.9rem; margin-right: 15px;">Offline Mode</span>
-            <button class="btn btn-secondary" onclick="toggleCalibration()" style="font-size: 0.8rem; padding: 5px 10px;">Calibrate SVG</button>
+            <span id="user-info" style="font-size:.9rem;margin-right:15px;">Offline Mode</span>
+            <button class="btn btn-secondary" onclick="toggleCalibration()" style="font-size:.8rem;padding:5px 10px;">Calibrate SVG</button>
         </div>
     </header>
 
     <div id="app-container">
         <div id="view-diagram" class="view active">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
                     <h2 style="margin:0;">System Overview</h2>
-                    <div class="log-controls">
-                        <div class="log-controls-group">
-                            <button class="btn btn-success" onclick="exportSystemLog()" style="font-size: 0.9rem;">💾 Export System Log</button>
-                            <button class="btn" onclick="document.getElementById('import-system-log-input').click()" style="font-size: 0.9rem;">📂 Import System Log</button>
-                            <input type="file" id="import-system-log-input" accept=".json" style="display: none;" onchange="importSystemLog(event)">
-                        </div>
-                    </div>
+                    <div class="log-controls"><div class="log-controls-group">
+                        <button class="btn btn-success" onclick="exportSystemLog()" style="font-size:.9rem;">Export System Log</button>
+                        <button class="btn" onclick="document.getElementById('import-system-log-input').click()" style="font-size:.9rem;">Import System Log</button>
+                        <input type="file" id="import-system-log-input" accept=".json" style="display:none;" onchange="importSystemLog(event)">
+                    </div></div>
                 </div>
                 <p>Click on a component (ESDV-101, V-101, etc.) to view its failure modes.</p>
                 <div id="diagram-wrapper">
                     <img src="diagram.jpg" alt="System Diagram" id="diagram-image">
                     <svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">
-                      <rect id="ESDV-101" class="clickable-area" x="200" y="250" width="110" height="80" />
-                      <rect id="V-101" class="clickable-area" x="340" y="230" width="130" height="110" />
-                      <rect id="PSV-101" class="clickable-area" x="520" y="10" width="100" height="80" />
-                      <rect id="PT-101" class="clickable-area" x="680" y="130" width="100" height="70" />
-                      <rect id="PIC-101" class="clickable-area" x="850" y="130" width="100" height="70" />
-                      <rect id="PCV-101" class="clickable-area" x="990" y="130" width="110" height="80" />
-                      <rect id="PI-101" class="clickable-area" x="680" y="370" width="90" height="80" />
-                      <rect id="P-101" class="clickable-area" x="840" y="370" width="120" height="80" />
-                      <rect id="NRV-101" class="clickable-area" x="990" y="370" width="110" height="80" />
-                      <rect id="GT-101" class="clickable-area" x="340" y="500" width="130" height="90" />
-                      <rect id="K-101" class="clickable-area" x="650" y="490" width="160" height="80" />
+                      <rect id="ESDV-101" class="clickable-area" x="200" y="250" width="110" height="80"/>
+                      <rect id="V-101" class="clickable-area" x="340" y="230" width="130" height="110"/>
+                      <rect id="PSV-101" class="clickable-area" x="520" y="10" width="100" height="80"/>
+                      <rect id="PT-101" class="clickable-area" x="680" y="130" width="100" height="70"/>
+                      <rect id="PIC-101" class="clickable-area" x="850" y="130" width="100" height="70"/>
+                      <rect id="PCV-101" class="clickable-area" x="990" y="130" width="110" height="80"/>
+                      <rect id="PI-101" class="clickable-area" x="680" y="370" width="90" height="80"/>
+                      <rect id="P-101" class="clickable-area" x="840" y="370" width="120" height="80"/>
+                      <rect id="NRV-101" class="clickable-area" x="990" y="370" width="110" height="80"/>
+                      <rect id="GT-101" class="clickable-area" x="340" y="500" width="130" height="90"/>
+                      <rect id="K-101" class="clickable-area" x="650" y="490" width="160" height="80"/>
                     </svg>
                 </div>
             </div>
@@ -479,41 +547,29 @@
 
         <div id="view-table" class="view">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <button class="btn btn-secondary" onclick="switchView('diagram')">← Back to Diagram</button>
-                    <div class="log-controls">
-                        <div class="log-controls-group">
-                            <button class="btn btn-success" onclick="exportComponentLog()" style="font-size: 0.9rem;">💾 Export Component Log</button>
-                            <button class="btn" onclick="document.getElementById('import-comp-log-input').click()" style="font-size: 0.9rem;">📂 Import Component Log</button>
-                            <input type="file" id="import-comp-log-input" accept=".json" style="display: none;" onchange="importComponentLog(event)">
-                        </div>
-                    </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                    <button class="btn btn-secondary" onclick="switchView('diagram')">Back to Diagram</button>
+                    <div class="log-controls"><div class="log-controls-group">
+                        <button class="btn btn-success" onclick="exportComponentLog()" style="font-size:.9rem;">Export Component Log</button>
+                        <button class="btn" onclick="document.getElementById('import-comp-log-input').click()" style="font-size:.9rem;">Import Component Log</button>
+                        <input type="file" id="import-comp-log-input" accept=".json" style="display:none;" onchange="importComponentLog(event)">
+                    </div></div>
                 </div>
                 <h2 id="table-title">Component Failure Modes</h2>
-                <div style="overflow-x: auto;">
-                    <table id="fm-table">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Failure Mode</th>
-                                <th>Cause</th>
-                                <th>Category</th>
-                                <th>Target R(t)</th>
-                                <th>Task List</th>
-                                <th>MTBF (Days)</th>
-                                <th>Last Maintenance Date</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <div style="overflow-x:auto;">
+                    <table id="fm-table"><thead><tr>
+                        <th>No</th><th>Failure Mode</th><th>Cause</th><th>Category</th>
+                        <th>Target R(t)</th><th>Task List</th><th>MTBF (Days)</th>
+                        <th>Last Maintenance Date</th><th>Status</th>
+                    </tr></thead><tbody></tbody></table>
                 </div>
             </div>
         </div>
 
         <div id="view-charts" class="view">
             <div class="card">
-                <button class="btn btn-secondary" onclick="switchView('table')">← Back to Table</button>
+                <button class="btn btn-secondary" onclick="switchView('table')">Back to Table</button>
+                <div id="chart-fm-details" class="fm-details"></div>
                 <h2 id="chart-title">Reliability & Failure Rate</h2>
                 <div class="charts-grid">
                     <div class="chart-box"><canvas id="chart-reliability"></canvas></div>
@@ -526,389 +582,152 @@
             <label for="day-slider">Current Day:</label>
             <input type="range" id="day-slider" min="1" max="365" value="1">
             <div class="day-display">Day: <span id="day-value">1</span></div>
+            <div class="slider-note" id="slider-note">Move the slider to view each Failure Mode status for this component.</div>
         </div>
     </div>
 
-    <footer>
-        <div id="branding-copyright"></div>
-        <div id="branding-powered"></div>
-    </footer>
+    <footer><div id="branding-copyright"></div><div id="branding-powered"></div></footer>
 
-    <div id="login-modal">
-        <div class="login-box">
-            <h3>Secure Data Access</h3>
-            <p style="font-size: 0.9rem; color: #666;">Select the encrypted data file and enter password.</p>
-            <input type="file" id="file-input" accept=".enc,.json">
-            <input type="password" id="password-input" placeholder="Enter Password">
-            <button class="btn" onclick="decryptAndLoad()">Unlock Dashboard</button>
-            <p id="login-error" style="color: red; font-size: 0.8rem; margin-top: 10px;"></p>
-        </div>
-    </div>
+    <div id="login-modal"><div class="login-box">
+        <h3>Secure Data Access</h3>
+        <p style="font-size:.9rem;color:#666;">Select the encrypted data file and enter password.</p>
+        <input type="file" id="file-input" accept=".enc,.json">
+        <input type="password" id="password-input" placeholder="Enter Password">
+        <button class="btn" onclick="decryptAndLoad()">Unlock Dashboard</button>
+        <p id="login-error" style="color:red;font-size:.8rem;margin-top:10px;"></p>
+    </div></div>
 
     <div id="calibration-controls">
         <h3>SVG Calibration</h3>
-        <p style="font-size: 0.85rem; color: #666;">Drag rectangles to match your diagram. Click "Export" to save coordinates.</p>
-        <label>Select Component:</label>
-        <select id="calib-select"></select>
+        <label>Select Component:</label><select id="calib-select"></select>
         <label>X: <input type="number" id="calib-x" step="10"></label>
         <label>Y: <input type="number" id="calib-y" step="10"></label>
         <label>Width: <input type="number" id="calib-w" step="10"></label>
         <label>Height: <input type="number" id="calib-h" step="10"></label>
-        <button class="btn" onclick="exportCalibration()" style="margin-top: 10px; width: 100%;">Export SVG Code</button>
-        <textarea id="calib-output" style="width: 100%; height: 100px; margin-top: 10px; font-size: 0.8rem;"></textarea>
+        <button class="btn" onclick="exportCalibration()" style="margin-top:10px;width:100%;">Export SVG Code</button>
+        <textarea id="calib-output" style="width:100%;height:100px;margin-top:10px;font-size:.8rem;"></textarea>
     </div>
 
     <script>
-        const EMBEDDED_DATA = null; 
+        const EMBEDDED_DATA = null;
         const EMBEDDED_PWD_B64 = "";
         const EMBEDDED_BRAND_C_B64 = "";
         const EMBEDDED_BRAND_P_B64 = "";
+        let appData=null, currentDay=1, currentComponentId=null, currentFailureModeIndex=null;
+        let chartRel=null, chartFR=null, maintenanceLog={};
 
-        let appData = null, currentDay = 1, currentComponentId = null, currentFailureModeIndex = null;
-        let chartRel = null, chartFR = null;
-        let maintenanceLog = {}; 
+        function setDataStatus(l){const e=document.getElementById('data-status');e.innerText=l?"Data: Loaded":"Data: Not Loaded";e.className="status-indicator "+(l?"status-loaded":"status-unloaded");}
+        function loadMaintenanceLog(){const s=localStorage.getItem('rcm_maintenance_log');if(s){try{maintenanceLog=JSON.parse(s);}catch(e){}}}
+        function saveMaintenanceLog(){localStorage.setItem('rcm_maintenance_log',JSON.stringify(maintenanceLog));}
+        function download(name,obj){const u="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(obj,null,2));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();}
+        function exportSystemLog(){download("system_maintenance_log.json",maintenanceLog);alert("System Log exported!");}
+        function importSystemLog(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{maintenanceLog=JSON.parse(e.target.result);saveMaintenanceLog();alert("System Log imported!");updateDiagramColors();}catch(x){alert("Error: "+x.message);}};r.readAsText(f);ev.target.value='';}
+        function exportComponentLog(){download("component_log_"+currentComponentId+".json",maintenanceLog[currentComponentId]||{});alert("Component Log exported!");}
+        function importComponentLog(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{let d=JSON.parse(e.target.result);if(d[currentComponentId]&&typeof d[currentComponentId]==='object')d=d[currentComponentId];if(!maintenanceLog[currentComponentId])maintenanceLog[currentComponentId]={};for(const[k,v]of Object.entries(d)){if(typeof v==='string')maintenanceLog[currentComponentId][k]=v;}saveMaintenanceLog();alert("Component Log imported!");renderTable(currentComponentId);updateDiagramColors();}catch(x){alert("Error: "+x.message);}};r.readAsText(f);ev.target.value='';}
+        function getDaysOffset(ds){if(!ds)return 0;const a=new Date(ds),t=new Date();a.setHours(0,0,0,0);t.setHours(0,0,0,0);const d=Math.ceil((t-a)/86400000);return d>0?d:0;}
+        function getEffectiveDay(s,c,i){const n=appData.components[c].failureModes[i].name;const d=maintenanceLog[c]?maintenanceLog[c][n]:null;return s+getDaysOffset(d);}
 
-        function setDataStatus(isLoaded) {
-            const el = document.getElementById('data-status');
-            if (isLoaded) { el.innerText = "Data: Loaded"; el.className = "status-indicator status-loaded"; } 
-            else { el.innerText = "Data: Not Loaded"; el.className = "status-indicator status-unloaded"; }
-        }
-
-        function loadMaintenanceLog() {
-            const saved = localStorage.getItem('rcm_maintenance_log');
-            if (saved) {
-                try { maintenanceLog = JSON.parse(saved); } catch(e) { console.error("Failed to load log", e); }
-            }
-        }
-
-        function saveMaintenanceLog() {
-            localStorage.setItem('rcm_maintenance_log', JSON.stringify(maintenanceLog));
-        }
-
-        function exportSystemLog() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(maintenanceLog, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "system_maintenance_log.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-            alert("System Log exported! This file contains data for ALL components.");
-        }
-
-        function importSystemLog(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    maintenanceLog = importedData;
-                    saveMaintenanceLog();
-                    alert("System Log imported successfully! All component statuses updated.");
-                    updateDiagramColors(); 
-                } catch(err) { alert("Error reading file: " + err.message); }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; 
-        }
-
-        function exportComponentLog() {
-            const compLog = maintenanceLog[currentComponentId] || {};
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(compLog, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "component_log_" + currentComponentId + ".json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-            alert("Component Log for " + currentComponentId + " exported!");
-        }
-
-        function importComponentLog(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (!maintenanceLog[currentComponentId]) maintenanceLog[currentComponentId] = {};
-                    let dataToMerge = importedData;
-                    if (importedData[currentComponentId] && typeof importedData[currentComponentId] === 'object') {
-                        dataToMerge = importedData[currentComponentId];
-                    }
-                    for (const [fmName, date] of Object.entries(dataToMerge)) {
-                        if (typeof date === 'string') {
-                            maintenanceLog[currentComponentId][fmName] = date;
-                        }
-                    }
-                    saveMaintenanceLog();
-                    alert("Component Log for " + currentComponentId + " imported successfully!");
-                    renderTable(currentComponentId); 
-                    updateDiagramColors(); 
-                } catch(err) { alert("Error reading file: " + err.message); }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; 
-        }
-
-        function getDaysOffset(dateStr) {
-            if (!dateStr) return 0;
-            const lastMaint = new Date(dateStr);
-            const today = new Date();
-            lastMaint.setHours(0,0,0,0);
-            today.setHours(0,0,0,0);
-            const diffTime = today - lastMaint;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays > 0 ? diffDays : 0;
-        }
-
-        function getEffectiveDay(sliderDay, compId, fmIndex) {
-            const fmName = appData.components[compId].failureModes[fmIndex].name;
-            const dateStr = maintenanceLog[compId] ? maintenanceLog[compId][fmName] : null;
-            return sliderDay + getDaysOffset(dateStr);
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadMaintenanceLog(); 
-            
-            if (EMBEDDED_BRAND_C_B64) document.getElementById('branding-copyright').innerHTML = atob(EMBEDDED_BRAND_C_B64);
-            if (EMBEDDED_BRAND_P_B64) document.getElementById('branding-powered').innerHTML = atob(EMBEDDED_BRAND_P_B64);
-
-            if (EMBEDDED_DATA) {
-                try {
-                    const pwd = atob(EMBEDDED_PWD_B64);
-                    const bytes = CryptoJS.AES.decrypt(EMBEDDED_DATA, pwd);
-                    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
-                    if (decryptedString) {
-                        appData = JSON.parse(decryptedString);
-                        document.getElementById('day-slider').max = appData.maxDays || 365;
-                        document.getElementById('login-modal').style.display = 'none';
-                        document.getElementById('global-slider').style.display = 'flex';
-                        setDataStatus(true);
-                        updateDiagramColors();
-                    }
-                } catch (err) { console.error("Auto-load failed:", err); }
-            }
-
-            document.querySelectorAll('.clickable-area').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    if (document.body.classList.contains('calibration-mode')) return;
-                    const id = e.target.id;
-                    if (appData && appData.components[id]) { currentComponentId = id; renderTable(id); switchView('table'); } 
-                    else if (!appData) alert("Data is not loaded.");
-                    else alert("No data found for component: " + id);
-                });
-            });
-
-            document.getElementById('day-slider').addEventListener('input', (e) => {
-                currentDay = parseInt(e.target.value);
-                document.getElementById('day-value').innerText = currentDay;
-                updateCurrentDayLines(); updateUI();
-            });
-
-            const calibSelect = document.getElementById('calib-select');
-            document.querySelectorAll('.clickable-area').forEach(el => {
-                const option = document.createElement('option');
-                option.value = el.id; option.text = el.id; calibSelect.appendChild(option);
-            });
-            calibSelect.addEventListener('change', updateCalibrationInputs);
-            ['calib-x', 'calib-y', 'calib-w', 'calib-h'].forEach(id => {
-                document.getElementById(id).addEventListener('change', applyCalibration);
-            });
-            updateCalibrationInputs();
+        document.addEventListener('DOMContentLoaded',()=>{
+            loadMaintenanceLog();
+            if(EMBEDDED_BRAND_C_B64)document.getElementById('branding-copyright').innerHTML=atob(EMBEDDED_BRAND_C_B64);
+            if(EMBEDDED_BRAND_P_B64)document.getElementById('branding-powered').innerHTML=atob(EMBEDDED_BRAND_P_B64);
+            if(EMBEDDED_DATA){try{const p=atob(EMBEDDED_PWD_B64);const s=CryptoJS.AES.decrypt(EMBEDDED_DATA,p).toString(CryptoJS.enc.Utf8);if(s){appData=JSON.parse(s);document.getElementById('day-slider').max=appData.maxDays||365;document.getElementById('login-modal').style.display='none';document.getElementById('global-slider').style.display='flex';setDataStatus(true);updateDiagramColors();}}catch(e){console.error("Auto-load failed:",e);}}
+            document.querySelectorAll('.clickable-area').forEach(el=>el.addEventListener('click',e=>{if(document.body.classList.contains('calibration-mode'))return;const id=e.target.id;if(appData&&appData.components[id]){currentComponentId=id;renderTable(id);switchView('table');}else if(!appData)alert("Data is not loaded.");else alert("No data for "+id);}));
+            document.getElementById('day-slider').addEventListener('input',e=>{currentDay=parseInt(e.target.value);document.getElementById('day-value').innerText=currentDay;updateCurrentDayLines();updateUI();});
+            const cs=document.getElementById('calib-select');document.querySelectorAll('.clickable-area').forEach(el=>{const o=document.createElement('option');o.value=el.id;o.text=el.id;cs.appendChild(o);});
+            cs.addEventListener('change',updateCalibrationInputs);['calib-x','calib-y','calib-w','calib-h'].forEach(id=>document.getElementById(id).addEventListener('change',applyCalibration));updateCalibrationInputs();
         });
 
-        function toggleCalibration() { document.body.classList.toggle('calibration-mode'); if (document.body.classList.contains('calibration-mode')) alert('Calibration mode ON.'); }
-        function updateCalibrationInputs() {
-            const id = document.getElementById('calib-select').value; const el = document.getElementById(id);
-            document.getElementById('calib-x').value = el.getAttribute('x'); document.getElementById('calib-y').value = el.getAttribute('y');
-            document.getElementById('calib-w').value = el.getAttribute('width'); document.getElementById('calib-h').value = el.getAttribute('height');
+        function toggleCalibration(){document.body.classList.toggle('calibration-mode');}
+        function updateCalibrationInputs(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);document.getElementById('calib-x').value=el.getAttribute('x');document.getElementById('calib-y').value=el.getAttribute('y');document.getElementById('calib-w').value=el.getAttribute('width');document.getElementById('calib-h').value=el.getAttribute('height');}
+        function applyCalibration(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);el.setAttribute('x',document.getElementById('calib-x').value);el.setAttribute('y',document.getElementById('calib-y').value);el.setAttribute('width',document.getElementById('calib-w').value);el.setAttribute('height',document.getElementById('calib-h').value);}
+        function exportCalibration(){let s='<svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">\n';document.querySelectorAll('.clickable-area').forEach(el=>{s+='  <rect id="'+el.id+'" class="clickable-area" x="'+el.getAttribute('x')+'" y="'+el.getAttribute('y')+'" width="'+el.getAttribute('width')+'" height="'+el.getAttribute('height')+'" />\n';});s+='</svg>';document.getElementById('calib-output').value=s;}
+        function decryptAndLoad(){const fi=document.getElementById('file-input'),pw=document.getElementById('password-input').value,em=document.getElementById('login-error');if(!fi.files[0]){em.innerText="Select a data file.";return;}if(!pw){em.innerText="Enter a password.";return;}const r=new FileReader();r.onload=e=>{try{const s=CryptoJS.AES.decrypt(e.target.result,pw).toString(CryptoJS.enc.Utf8);if(!s)throw new Error("Wrong password");appData=JSON.parse(s);document.getElementById('day-slider').max=appData.maxDays||365;document.getElementById('login-modal').style.display='none';document.getElementById('global-slider').style.display='flex';setDataStatus(true);updateDiagramColors();}catch(x){em.innerText="Error: "+x.message;}};r.readAsText(fi.files[0]);}
+        function switchView(v){
+            document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+            document.getElementById('view-'+v).classList.add('active');
+            const note = document.getElementById('slider-note');
+            if(note) note.style.display = (v === 'charts') ? 'none' : 'block';
+            if(v==='diagram'){currentComponentId=null;updateDiagramColors();}
+            else if(v==='table')renderTable(currentComponentId);
+            else if(v==='charts')renderCharts();
         }
-        function applyCalibration() {
-            const id = document.getElementById('calib-select').value; const el = document.getElementById(id);
-            el.setAttribute('x', document.getElementById('calib-x').value); el.setAttribute('y', document.getElementById('calib-y').value);
-            el.setAttribute('width', document.getElementById('calib-w').value); el.setAttribute('height', document.getElementById('calib-h').value);
-        }
-        function exportCalibration() {
-            let svg = '<svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">\n';
-            document.querySelectorAll('.clickable-area').forEach(el => { svg += '  <rect id="' + el.id + '" class="clickable-area" x="' + el.getAttribute('x') + '" y="' + el.getAttribute('y') + '" width="' + el.getAttribute('width') + '" height="' + el.getAttribute('height') + '" />\n'; });
-            svg += '</svg>'; document.getElementById('calib-output').value = svg;
-        }
-
-        function decryptAndLoad() {
-            const fileInput = document.getElementById('file-input'); const password = document.getElementById('password-input').value; const errorMsg = document.getElementById('login-error');
-            if (!fileInput.files[0]) { errorMsg.innerText = "Please select a data file."; return; }
-            if (!password) { errorMsg.innerText = "Please enter a password."; return; }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const bytes = CryptoJS.AES.decrypt(e.target.result, password);
-                    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
-                    if (!decryptedString) throw new Error("Wrong password");
-                    appData = JSON.parse(decryptedString);
-                    document.getElementById('day-slider').max = appData.maxDays || 365;
-                    document.getElementById('login-modal').style.display = 'none';
-                    document.getElementById('global-slider').style.display = 'flex';
-                    setDataStatus(true); updateDiagramColors();
-                } catch (err) { errorMsg.innerText = "Error: " + err.message; }
-            };
-            reader.readAsText(fileInput.files[0]);
-        }
-
-        function switchView(viewName) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-' + viewName).classList.add('active');
-            if (viewName === 'diagram') { currentComponentId = null; updateDiagramColors(); } 
-            else if (viewName === 'table') renderTable(currentComponentId); 
-            else if (viewName === 'charts') renderCharts();
-        }
-
-        function getStatusColor(effectiveDay, thresholds) {
-            if (!thresholds) return 'green';
-            if (effectiveDay <= thresholds.yellow) return 'green';
-            if (effectiveDay <= thresholds.red) return 'yellow';
-            return 'red';
-        }
-
-        function getComponentStatus(compId) {
-            const comp = appData.components[compId]; let worstStatus = 'green';
-            const priority = { 'green': 1, 'yellow': 2, 'red': 3 };
-            comp.failureModes.forEach((fm, index) => {
-                const effectiveDay = getEffectiveDay(currentDay, compId, index);
-                const status = getStatusColor(effectiveDay, fm.thresholds);
-                if (priority[status] > priority[worstStatus]) worstStatus = status;
-            });
-            return worstStatus;
-        }
-
-        function updateDiagramColors() {
-            if (!appData) return;
-            Object.keys(appData.components).forEach(compId => {
-                const el = document.getElementById(compId);
-                if (el) { el.classList.remove('comp-green', 'comp-yellow', 'comp-red'); el.classList.add('comp-' + getComponentStatus(compId)); }
-            });
-        }
-
-        function handleDateChange(compId, fmIndex, dateStr) {
-            const fmName = appData.components[compId].failureModes[fmIndex].name;
-            if (!maintenanceLog[compId]) maintenanceLog[compId] = {};
-            if (dateStr) { maintenanceLog[compId][fmName] = dateStr; } 
-            else { delete maintenanceLog[compId][fmName]; }
-            saveMaintenanceLog();
-            updateDiagramColors();
-            if (document.getElementById('view-table').classList.contains('active')) {
-                const row = document.querySelector('tr[data-fm-index="' + fmIndex + '"]');
-                if (row) {
-                    const effectiveDay = getEffectiveDay(currentDay, compId, fmIndex);
-                    const status = getStatusColor(effectiveDay, appData.components[compId].failureModes[fmIndex].thresholds);
-                    const statusCell = row.querySelector('.status-cell');
-                    statusCell.className = 'status-cell status-' + status;
-                    statusCell.innerText = status.toUpperCase();
+        function getStatusColor(d,t){if(!t)return'green';if(d<=t.yellow)return'green';if(d<=t.red)return'yellow';return'red';}
+        function getComponentStatus(c){const comp=appData.components[c];let w='green';const p={green:1,yellow:2,red:3};comp.failureModes.forEach((fm,i)=>{const s=getStatusColor(getEffectiveDay(currentDay,c,i),fm.thresholds);if(p[s]>p[w])w=s;});return w;}
+        function updateDiagramColors(){if(!appData)return;Object.keys(appData.components).forEach(c=>{const el=document.getElementById(c);if(el){el.classList.remove('comp-green','comp-yellow','comp-red');el.classList.add('comp-'+getComponentStatus(c));}});}
+        function handleDateChange(c,i,ds){const n=appData.components[c].failureModes[i].name;if(!maintenanceLog[c])maintenanceLog[c]={};if(ds)maintenanceLog[c][n]=ds;else delete maintenanceLog[c][n];saveMaintenanceLog();updateDiagramColors();if(document.getElementById('view-table').classList.contains('active')){const row=document.querySelector('tr[data-fm-index="'+i+'"]');if(row){const s=getStatusColor(getEffectiveDay(currentDay,c,i),appData.components[c].failureModes[i].thresholds);const sc=row.querySelector('.status-cell');sc.className='status-cell status-'+s;sc.innerText=s.toUpperCase();}}if(document.getElementById('view-charts').classList.contains('active'))updateCurrentDayLines();}
+        
+        function renderTable(c){
+            const comp=appData.components[c];
+            document.getElementById('table-title').innerText='Failure Modes: '+c;
+            const tb=document.querySelector('#fm-table tbody');tb.innerHTML='';
+            comp.failureModes.forEach((fm,i)=>{
+                const ed=getEffectiveDay(currentDay,c,i),st=getStatusColor(ed,fm.thresholds),sd=maintenanceLog[c]?maintenanceLog[c][fm.name]:'';
+                
+                // FIX 3: Add blue dot icon if actual data exists
+                let fmNameHtml = fm.name;
+                if (fm.actualData && fm.actualData.length > 0) {
+                    fmNameHtml += ' <span class="actual-data-icon" title="Contains actual failure data">●</span>';
                 }
-            }
-            if (document.getElementById('view-charts').classList.contains('active')) { updateCurrentDayLines(); }
-        }
 
-        function renderTable(compId) {
-            const comp = appData.components[compId];
-            document.getElementById('table-title').innerText = 'Failure Modes: ' + compId;
-            const tbody = document.querySelector('#fm-table tbody'); tbody.innerHTML = '';
-            comp.failureModes.forEach((fm, index) => {
-                const effectiveDay = getEffectiveDay(currentDay, compId, index);
-                const status = getStatusColor(effectiveDay, fm.thresholds);
-                const savedDate = maintenanceLog[compId] ? maintenanceLog[compId][fm.name] : '';
-                const tr = document.createElement('tr');
-                tr.setAttribute('data-fm-index', index);
-                tr.innerHTML = '<td>' + (index + 1) + '</td><td>' + fm.name + '</td><td>' + fm.cause + '</td><td>' + fm.category + '</td><td>' + fm.targetRt + '%</td><td>' + fm.taskList + '</td><td>' + fm.mtbfDays.toFixed(1) + '</td><td><input type="date" class="maint-date-input" value="' + savedDate + '"></td><td class="status-cell status-' + status + '">' + status.toUpperCase() + '</td>';
-                const dateInput = tr.querySelector('.maint-date-input');
-                dateInput.addEventListener('change', (e) => handleDateChange(compId, index, e.target.value));
-                tr.addEventListener('click', (e) => { if (e.target.tagName !== 'INPUT') { currentFailureModeIndex = index; switchView('charts'); } });
-                tbody.appendChild(tr);
+                const tr=document.createElement('tr');tr.setAttribute('data-fm-index',i);
+                tr.innerHTML='<td>'+(i+1)+'</td><td>'+fmNameHtml+'</td><td>'+fm.cause+'</td><td>'+fm.category+'</td><td>'+fm.targetRt+'%</td><td>'+fm.taskList+'</td><td>'+fm.mtbfDays.toFixed(1)+'</td><td><input type="date" class="maint-date-input" value="'+sd+'"></td><td class="status-cell status-'+st+'">'+st.toUpperCase()+'</td>';
+                tr.querySelector('.maint-date-input').addEventListener('change',e=>handleDateChange(c,i,e.target.value));
+                tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){currentFailureModeIndex=i;switchView('charts');}});
+                tb.appendChild(tr);
             });
         }
 
-        function getValueAtDay(days, values, targetDay) {
-            for (let i = 0; i < days.length - 1; i++) {
-                if (days[i] <= targetDay && days[i+1] >= targetDay) {
-                    const t = (targetDay - days[i]) / (days[i+1] - days[i]);
-                    return values[i] + t * (values[i+1] - values[i]);
-                }
-            }
-            return values[values.length - 1];
+        function getValueAtDay(days,vals,t){for(let i=0;i<days.length-1;i++){if(days[i]<=t&&days[i+1]>=t){const f=(t-days[i])/(days[i+1]-days[i]);return vals[i]+f*(vals[i+1]-vals[i]);}}return vals[vals.length-1];}
+        function renderCharts(){
+            const comp=appData.components[currentComponentId], fm=comp.failureModes[currentFailureModeIndex];
+            document.getElementById('chart-title').innerText=currentComponentId+' - '+fm.name;
+            const detailsDiv = document.getElementById('chart-fm-details');
+            detailsDiv.innerHTML = `<strong>Cause:</strong> ${fm.cause}<br><strong>Task List:</strong> ${fm.taskList}`;
+            
+            let targetRt=parseFloat(fm.targetRt)||99.0, targetDay=parseFloat(fm.targetDay);
+            const maxDays=Math.max(...fm.days);
+            const yMin=(fm.chartYMin!=null)?fm.chartYMin:0;
+            const xMaxRel=(fm.chartXMax!=null)?fm.chartXMax:maxDays;
+            
+            if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){for(let i=0;i<fm.reliabilityData.length-1;i++){if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;}}}
+            const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
+            const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
+            const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+            if(chartRel)chartRel.destroy(); if(chartFR)chartFR.destroy();
+            const actual=(fm.actualData&&fm.actualData.length)?{label:'Actual Failure Events',data:fm.actualData,backgroundColor:'#ffffff',borderColor:'#333333',borderWidth:1.5,pointRadius:6,pointHoverRadius:8,showLine:false}:null;
+            const relDS=[
+                {label:'Reliability',data:fm.days.map((d,i)=>({x:d,y:fm.reliabilityData[i]})),borderColor:'#3498db',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
+                {label:'Current Day',data:[{x:ed,y:0},{x:ed,y:cRel}],borderColor:'#f1c40f',borderDash:[5,5],borderWidth:2,pointRadius:0,fill:false,tension:0,showLine:true},
+                {label:'Current Rel',data:[{x:1,y:cRel},{x:ed,y:cRel}],borderColor:'#f1c40f',borderDash:[5,5],borderWidth:2,pointRadius:0,fill:false,tension:0,showLine:true},
+                {label:'Current Intersection',data:[{x:ed,y:cRel}],backgroundColor:'#f1c40f',pointRadius:6,showLine:false},
+                {label:'Target R(t)',data:[{x:1,y:targetRt},{x:targetDay,y:targetRt}],borderColor:'#e74c3c',borderDash:[5,5],borderWidth:3,pointRadius:0,fill:false,tension:0,showLine:true},
+                {label:'Target Day',data:[{x:targetDay,y:0},{x:targetDay,y:targetRt}],borderColor:'#e74c3c',borderDash:[5,5],borderWidth:3,pointRadius:0,fill:false,tension:0,showLine:true},
+                {label:'Target Intersection',data:[{x:targetDay,y:targetRt}],pointStyle:'crossRot',radius:10,borderColor:'#e74c3c',borderWidth:4,showLine:false}
+            ];
+            if(actual)relDS.push(actual);
+            chartRel=new Chart(document.getElementById('chart-reliability').getContext('2d'),{type:'line',data:{datasets:relDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'logarithmic',title:{display:true,text:'Days (Log Scale)'},min:1,max:xMaxRel},y:{title:{display:true,text:'Reliability %'},min:yMin,max:100}}}});
+            chartFR=new Chart(document.getElementById('chart-failurerate').getContext('2d'),{type:'line',data:{datasets:[
+                {label:'Failure Rate',data:fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})),borderColor:'#3498db',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
+                {label:'Current Day',data:[{x:ed,y:0},{x:ed,y:cFR}],borderColor:'#f1c40f',borderDash:[5,5],borderWidth:2,pointRadius:0,fill:false,tension:0,showLine:true},
+                {label:'Current Intersection',data:[{x:ed,y:cFR}],backgroundColor:'#f1c40f',pointRadius:6,showLine:false}
+            ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'Days'},min:0},y:{title:{display:true,text:'Failure Rate'},min:0}}}});
         }
-
-        function renderCharts() {
-            const comp = appData.components[currentComponentId];
-            const fm = comp.failureModes[currentFailureModeIndex];
-            document.getElementById('chart-title').innerText = currentComponentId + ' - ' + fm.name;
-            let targetRt = parseFloat(fm.targetRt) || 99.0;
-            let targetDay = parseFloat(fm.targetDay);
-            const maxDays = Math.max(...fm.days);
-            const minRel = Math.min(...fm.reliabilityData) - 2;
-            if (!targetDay || isNaN(targetDay) || targetDay >= maxDays * 0.99) {
-                for (let i = 0; i < fm.reliabilityData.length - 1; i++) {
-                    if (fm.reliabilityData[i] >= targetRt && fm.reliabilityData[i+1] < targetRt) {
-                        const t = (targetRt - fm.reliabilityData[i]) / (fm.reliabilityData[i+1] - fm.reliabilityData[i]);
-                        targetDay = fm.days[i] + t * (fm.days[i+1] - fm.days[i]);
-                        break;
-                    }
-                }
-            }
-            const effectiveDay = getEffectiveDay(currentDay, currentComponentId, currentFailureModeIndex);
-            const currentRel = getValueAtDay(fm.days, fm.reliabilityData, effectiveDay);
-            const currentFR = getValueAtDay(fm.days, fm.failureRateData, effectiveDay);
-            if (chartRel) chartRel.destroy(); if (chartFR) chartFR.destroy();
-
-            chartRel = new Chart(document.getElementById('chart-reliability').getContext('2d'), {
-                type: 'line',
-                data: {
-                    datasets: [
-                        { label: 'Reliability', data: fm.days.map((d, i) => ({x: d, y: fm.reliabilityData[i]})), borderColor: '#3498db', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false },
-                        { label: 'Current Day', data: [{x: effectiveDay, y: 0}, {x: effectiveDay, y: currentRel}], borderColor: '#f1c40f', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false, tension: 0, showLine: true },
-                        { label: 'Current Rel', data: [{x: 1, y: currentRel}, {x: effectiveDay, y: currentRel}], borderColor: '#f1c40f', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false, tension: 0, showLine: true },
-                        { label: 'Current Intersection', data: [{x: effectiveDay, y: currentRel}], backgroundColor: '#f1c40f', pointRadius: 6, showLine: false },
-                        { label: 'Target R(t)', data: [{x: 1, y: targetRt}, {x: targetDay, y: targetRt}], borderColor: '#e74c3c', borderDash: [5, 5], borderWidth: 3, pointRadius: 0, fill: false, tension: 0, showLine: true },
-                        { label: 'Target Day', data: [{x: targetDay, y: 0}, {x: targetDay, y: targetRt}], borderColor: '#e74c3c', borderDash: [5, 5], borderWidth: 3, pointRadius: 0, fill: false, tension: 0, showLine: true },
-                        { label: 'Target Intersection', data: [{x: targetDay, y: targetRt}], pointStyle: 'crossRot', radius: 10, borderColor: '#e74c3c', borderWidth: 4, showLine: false }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { type: 'logarithmic', title: { display: true, text: 'Days (Log Scale)' }, min: 1, max: maxDays * 1.05 }, y: { title: { display: true, text: 'Reliability %' }, min: minRel, max: 100 } } }
-            });
-
-            chartFR = new Chart(document.getElementById('chart-failurerate').getContext('2d'), {
-                type: 'line',
-                data: {
-                    datasets: [
-                        { label: 'Failure Rate', data: fm.days.map((d, i) => ({x: d, y: fm.failureRateData[i]})), borderColor: '#3498db', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false },
-                        { label: 'Current Day', data: [{x: effectiveDay, y: 0}, {x: effectiveDay, y: currentFR}], borderColor: '#f1c40f', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false, tension: 0, showLine: true },
-                        { label: 'Current Intersection', data: [{x: effectiveDay, y: currentFR}], backgroundColor: '#f1c40f', pointRadius: 6, showLine: false }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { type: 'linear', title: { display: true, text: 'Days' }, min: 0, max: maxDays * 1.05 }, y: { title: { display: true, text: 'Failure Rate' }, min: 0 } } }
-            });
-        }
-
-        function updateCurrentDayLines() {
-            if (!chartRel || !chartFR || !appData) return;
-            const comp = appData.components[currentComponentId];
-            const fm = comp.failureModes[currentFailureModeIndex];
-            const effectiveDay = getEffectiveDay(currentDay, currentComponentId, currentFailureModeIndex);
-            const currentRel = getValueAtDay(fm.days, fm.reliabilityData, effectiveDay);
-            const currentFR = getValueAtDay(fm.days, fm.failureRateData, effectiveDay);
-            chartRel.data.datasets[1].data = [{x: effectiveDay, y: 0}, {x: effectiveDay, y: currentRel}];
-            chartRel.data.datasets[2].data = [{x: 1, y: currentRel}, {x: effectiveDay, y: currentRel}];
-            chartRel.data.datasets[3].data = [{x: effectiveDay, y: currentRel}];
+        function updateCurrentDayLines(){
+            if(!chartRel||!chartFR||!appData)return;
+            const fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];
+            const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
+            const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
+            const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+            chartRel.data.datasets[1].data=[{x:ed,y:0},{x:ed,y:cRel}];
+            chartRel.data.datasets[2].data=[{x:1,y:cRel},{x:ed,y:cRel}];
+            chartRel.data.datasets[3].data=[{x:ed,y:cRel}];
             chartRel.update('none');
-            chartFR.data.datasets[1].data = [{x: effectiveDay, y: 0}, {x: effectiveDay, y: currentFR}];
-            chartFR.data.datasets[2].data = [{x: effectiveDay, y: currentFR}];
+            chartFR.data.datasets[1].data=[{x:ed,y:0},{x:ed,y:cFR}];
+            chartFR.data.datasets[2].data=[{x:ed,y:cFR}];
             chartFR.update('none');
         }
-
-        function updateUI() {
-            if (document.getElementById('view-diagram').classList.contains('active')) updateDiagramColors();
-            else if (document.getElementById('view-table').classList.contains('active')) renderTable(currentComponentId);
-        }
+        function updateUI(){if(document.getElementById('view-diagram').classList.contains('active'))updateDiagramColors();else if(document.getElementById('view-table').classList.contains('active'))renderTable(currentComponentId);}
     </script>
 </body>
 </html>
