@@ -29,3 +29,28 @@
 - `build_data.py`: v0.6.12 (Writes `build_info.json`, strict consistency checks)
 - `embed_data.py`: v0.2.1 (Injects dynamic `APP_BUILD_META`, no hardcoded placeholders)
 - `integrate_caden.py`: Latest (CADEN v0.6.4+ support)
+
+## 🎨 Chart Style Archive (Pre-v0.7.0)
+*Use this reference if reverting to the Light Theme is required.*
+- **Background:** White (`#ffffff`)
+- **Border:** None
+- **Grid:** Light Gray (`#eee`)
+- **Typography:** Dark Gray (`#333`), Standard sans-serif.
+- **Data Series:**
+  - Reliability Curve: Blue (`#3498db`), solid, 2px.
+  - Ongoing/Alarm: Yellow/Red dashed lines, no specific point markers at intersections (used simple line segments).
+  - Actual Data: White circles with black border.
+- **Legend:** Hidden (`display: false`).
+
+
+### v0.7.10
+- **Custom HTML Legend (Reliability chart):** Replaced Chart.js canvas legend (which rendered dashed *boxes*) with a hand-built HTML legend under the chart — solid blue line (Reliability Curve), dashed yellow line (Ongoing), dashed red line (Alarm), small white circle (Failure event, shown only when actual data exists).
+- **Failure Rate chart:** Legend removed entirely.
+- **Chart sizing:** Canvas wrapped in a flex `chart-canvas-wrap` so charts fill their quadrant correctly.
+
+### v0.7.0–v0.7.9 (Dark Engineering Theme)
+- Pure-black chart background, dark-gray grid, white typography; bold titles.
+- Reliability Y-axis max = 105%; X-axis logarithmic; Failure Rate X-axis linear.
+- Ongoing = yellow dashed L-line + yellow diamond at intersection; Alarm = bright-red dashed L-line + red cross at intersection; Failure events = small white circles on the curve.
+- Conditional red chart border when a Failure Mode has actual failure-event data.
+- Intersection markers move correctly with the slider (separated line vs. marker datasets).

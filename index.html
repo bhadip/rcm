@@ -1,11 +1,11 @@
-<!-- Version: v0.6.15 -->
+<!-- Version: v0.7.10 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <style> body { opacity: 0; transition: opacity 0.2s ease-in; } </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCM Reliability Dashboard v0.6.15</title>
+    <title>RCM Reliability Dashboard v0.7.10</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F172A'/%3E%3Cpath d='M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z' fill='%231E293B' stroke='%233B82F6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%2310B981' stroke-width='4'/%3E%3Cpath d='M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34' stroke='%2310B981' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
     <script src="crypto-js.min.js"></script>
     <script src="chart.umd.js"></script>
@@ -42,7 +42,8 @@
         .slider-note { font-size:.85rem; color:#7f8c8d; font-style:italic; width:100%; margin-top:5px; }
         .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
         @media (max-width:768px){ .charts-grid{grid-template-columns:1fr;} }
-        .chart-box { background:#fff; padding:15px; border-radius:8px; height:400px; }
+        .chart-box { background:#000000; padding:15px; border-radius:4px; height:400px; border: 2px solid transparent; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: border-color 0.3s ease; }
+.chart-box.has-actual-data { border-color: #FF0000; }
         .calibration-mode #diagram-overlay{pointer-events:auto;}
         .calibration-mode .clickable-area{fill:rgba(255,0,0,.2);stroke:red;cursor:move;}
         #calibration-controls{display:none;position:fixed;top:70px;right:20px;background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:500;max-width:300px;}
@@ -71,7 +72,29 @@
 </style>
 
 
-<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.15) -->
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+    .chart-box{display:flex;flex-direction:column;}
+    .chart-canvas-wrap{flex:1;position:relative;min-height:0;}
+    .chart-legend{display:flex;justify-content:center;flex-wrap:wrap;gap:18px;margin-top:10px;color:#fff;font-size:11px;font-family:'Segoe UI',Tahoma,sans-serif;}
+    .chart-legend .lg-item{display:flex;align-items:center;gap:6px;}
+    .chart-legend .lg-line{display:inline-block;width:32px;height:0;border-top:2px solid #00BFFF;}
+    .chart-legend .lg-dash-y{border-top:2px dashed #FFFF00;}
+    .chart-legend .lg-dash-r{border-top:3px dashed #FF0000;}
+    .chart-legend .lg-circle{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;}
+</style>
+<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.3) -->
 <script>
 (function () {
     const CADEN_VERSION = "0.6.5";
@@ -441,7 +464,7 @@
                 <path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
             </svg>
             <h1>RCM Reliability Dashboard</h1>
-            <span class="version-badge">v0.6.15</span>
+            <span class="version-badge">v0.7.10</span>
         </div>
     </header>
     
@@ -508,8 +531,8 @@
                 <div id="chart-fm-details" class="fm-details"></div>
                 <h2 id="chart-title">Reliability & Failure Rate</h2>
                 <div class="charts-grid">
-                    <div class="chart-box"><canvas id="chart-reliability"></canvas></div>
-                    <div class="chart-box"><canvas id="chart-failurerate"></canvas></div>
+                    <div class="chart-box"><div class="chart-canvas-wrap"><canvas id="chart-reliability"></canvas></div><div id="reliability-legend" class="chart-legend"></div></div>
+                    <div class="chart-box"><div class="chart-canvas-wrap"><canvas id="chart-failurerate"></canvas></div></div>
                 </div>
             </div>
         </div>
@@ -647,50 +670,143 @@
 
         function getValueAtDay(days,vals,t){for(let i=0;i<days.length-1;i++){if(days[i]<=t&&days[i+1]>=t){const f=(t-days[i])/(days[i+1]-days[i]);return vals[i]+f*(vals[i+1]-vals[i]);}}return vals[vals.length-1];}
         function renderCharts(){
-            const comp=appData.components[currentComponentId], fm=comp.failureModes[currentFailureModeIndex];
-            document.getElementById('chart-title').innerText=currentComponentId+' - '+fm.name;
-            document.getElementById('chart-fm-details').innerHTML = `<strong>Cause:</strong> ${fm.cause}<br><strong>Task List:</strong> ${fm.taskList}`;
-            let targetRt=parseFloat(fm.targetRt)||99.0, targetDay=parseFloat(fm.targetDay);
-            const maxDays=Math.max(...fm.days);
-            const yMin=(fm.chartYMin!=null)?fm.chartYMin:0;
-            const xMaxRel=(fm.chartXMax!=null)?fm.chartXMax:maxDays;
-            if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){for(let i=0;i<fm.reliabilityData.length-1;i++){if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;}}}
-            const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
-            const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
-            const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
-            if(chartRel)chartRel.destroy(); if(chartFR)chartFR.destroy();
-            const actual=(fm.actualData&&fm.actualData.length)?{label:'Actual Failure Events',data:fm.actualData,backgroundColor:'#ffffff',borderColor:'#333333',borderWidth:1.5,pointRadius:6,pointHoverRadius:8,showLine:false}:null;
-            const relDS=[
-                {label:'Reliability',data:fm.days.map((d,i)=>({x:d,y:fm.reliabilityData[i]})),borderColor:'#3498db',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
-                {label:'Current Day',data:[{x:ed,y:0},{x:ed,y:cRel}],borderColor:'#f1c40f',borderDash:[5,5],borderWidth:2,pointRadius:0,fill:false,tension:0,showLine:true},
-                {label:'Current Rel',data:[{x:1,y:cRel},{x:ed,y:cRel}],borderColor:'#f1c40f',borderDash:[5,5],borderWidth:2,pointRadius:0,fill:false,tension:0,showLine:true},
-                {label:'Current Intersection',data:[{x:ed,y:cRel}],backgroundColor:'#f1c40f',pointRadius:6,showLine:false},
-                {label:'Target R(t)',data:[{x:1,y:targetRt},{x:targetDay,y:targetRt}],borderColor:'#e74c3c',borderDash:[5,5],borderWidth:3,pointRadius:0,fill:false,tension:0,showLine:true},
-                {label:'Target Day',data:[{x:targetDay,y:0},{x:targetDay,y:targetRt}],borderColor:'#e74c3c',borderDash:[5,5],borderWidth:3,pointRadius:0,fill:false,tension:0,showLine:true},
-                {label:'Target Intersection',data:[{x:targetDay,y:targetRt}],pointStyle:'crossRot',radius:10,borderColor:'#e74c3c',borderWidth:4,showLine:false}
-            ];
-            if(actual)relDS.push(actual);
-            chartRel=new Chart(document.getElementById('chart-reliability').getContext('2d'),{type:'line',data:{datasets:relDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'logarithmic',title:{display:true,text:'Days (Log Scale)'},min:1,max:xMaxRel},y:{title:{display:true,text:'Reliability %'},min:yMin,max:100}}}});
-            chartFR=new Chart(document.getElementById('chart-failurerate').getContext('2d'),{type:'line',data:{datasets:[
-                {label:'Failure Rate',data:fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})),borderColor:'#3498db',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
-                {label:'Current Day',data:[{x:ed,y:0},{x:ed,y:cFR}],borderColor:'#f1c40f',borderDash:[5,5],borderWidth:2,pointRadius:0,fill:false,tension:0,showLine:true},
-                {label:'Current Intersection',data:[{x:ed,y:cFR}],backgroundColor:'#f1c40f',pointRadius:6,showLine:false}
-            ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{type:'linear',title:{display:true,text:'Days'},min:0},y:{title:{display:true,text:'Failure Rate'},min:0}}}});
+    const comp=appData.components[currentComponentId], fm=comp.failureModes[currentFailureModeIndex];
+    const hasActualData = fm.actualData && fm.actualData.length > 0;
+    
+    // Apply red border to Reliability chart if actual data exists
+    const relCanvas = document.getElementById('chart-reliability');
+    if(relCanvas) relCanvas.parentElement.classList.toggle('has-actual-data', hasActualData);
+
+    // Common Dark Theme Options
+    const darkTheme = {
+        responsive: true, maintainAspectRatio: false,
+        color: '#FFFFFF',
+        plugins: {
+            title: { display: true, text: fm.name, color: '#FFFFFF', font: { size: 16, weight: 'bold', family: "'Segoe UI', sans-serif" }, padding: {bottom: 20} },
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: '#FFFFFF',
+                    font: { size: 11, family: "'Segoe UI', sans-serif" },
+                    usePointStyle: false,
+                    boxWidth: 40,
+                    boxHeight: 12,
+                    padding: 14,
+                    generateLabels: function(chart) {
+                        var items = [];
+                        var datasets = chart.data.datasets;
+                        var styleMap = {
+                            'Reliability Curve': { type: 'line', color: '#00BFFF', dash: [], width: 2 },
+                            'Ongoing':           { type: 'line', color: '#FFFF00', dash: [6, 4], width: 2 },
+                            'Alarm':             { type: 'line', color: '#FF0000', dash: [6, 4], width: 3 },
+                            'Failure event':     { type: 'circle', color: '#FFFFFF', radius: 4 }
+                        };
+                        datasets.forEach(function(ds, idx) {
+                            if (styleMap[ds.label]) {
+                                var st = styleMap[ds.label];
+                                items.push({
+                                    text: ds.label,
+                                    fillStyle: st.type === 'circle' ? st.color : 'transparent',
+                                    strokeStyle: st.type === 'line' ? st.color : 'transparent',
+                                    lineWidth: st.type === 'line' ? st.width : 0,
+                                    lineDash: st.type === 'line' ? st.dash : [],
+                                    pointStyle: st.type === 'circle' ? 'circle' : 'line',
+                                    hidden: !chart.isDatasetVisible(idx),
+                                    datasetIndex: idx,
+                                    fontColor: '#FFFFFF'
+                                });
+                            }
+                        });
+                        return items;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: { grid: { color: '#444444', lineWidth: 1 }, ticks: { color: '#FFFFFF', font: { size: 10 } }, title: { display: true, text: 'Next x days (hari)', color: '#FFFFFF', font: { size: 12, weight: 'bold' } } },
+            y: { grid: { color: '#444444', lineWidth: 1 }, ticks: { color: '#FFFFFF', font: { size: 10 } }, title: { display: true, text: 'R(t) - %', color: '#FFFFFF', font: { size: 12, weight: 'bold' } } }
         }
-        function updateCurrentDayLines(){
-            if(!chartRel||!chartFR||!appData)return;
-            const fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];
-            const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
-            const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
-            const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
-            chartRel.data.datasets[1].data=[{x:ed,y:0},{x:ed,y:cRel}];
-            chartRel.data.datasets[2].data=[{x:1,y:cRel},{x:ed,y:cRel}];
-            chartRel.data.datasets[3].data=[{x:ed,y:cRel}];
-            chartRel.update('none');
-            chartFR.data.datasets[1].data=[{x:ed,y:0},{x:ed,y:cFR}];
-            chartFR.data.datasets[2].data=[{x:ed,y:cFR}];
-            chartFR.update('none');
+    };
+
+    let targetRt=parseFloat(fm.targetRt)||99.0, targetDay=parseFloat(fm.targetDay);
+    const maxDays=Math.max(...fm.days);
+    const yMin=(fm.chartYMin!=null)?fm.chartYMin:0;
+    const xMaxRel=(fm.chartXMax!=null)?fm.chartXMax:maxDays;
+    
+    if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){
+        for(let i=0;i<fm.reliabilityData.length-1;i++){
+            if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){
+                const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);
+                targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;
+            }
         }
+    }
+    const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
+    const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
+    const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+    
+    if(chartRel)chartRel.destroy(); if(chartFR)chartFR.destroy();
+
+    // Datasets
+    const reliabilityDatasets = [
+        { label: 'Reliability Curve', data: fm.days.map((d,i)=>({x:d,y:fm.reliabilityData[i]})), borderColor: '#00BFFF', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false },
+        { label: 'Ongoing', data: [{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}], borderColor: '#FFFF00', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, showLine: true, fill: false },
+        { label: 'Ongoing Marker', data: [{x:ed,y:cRel}], pointStyle: 'rectRot', pointBackgroundColor: '#FFFF00', pointRadius: 6, showLine: false },
+        { label: 'Alarm', data: [{x:1,y:targetRt},{x:targetDay,y:targetRt},{x:targetDay,y:0}], borderColor: '#FF0000', borderDash: [5, 5], borderWidth: 3, pointRadius: 0, showLine: true, fill: false },
+        { label: 'Alarm Marker', data: [{x:targetDay,y:targetRt}], pointStyle: 'crossRot', pointBackgroundColor: '#FF0000', pointBorderColor: '#FF0000', pointRadius: 8, showLine: false }
+    ];
+    
+    if(hasActualData) {
+        reliabilityDatasets.push({ label: 'Failure event', data: fm.actualData, backgroundColor: '#FFFFFF', pointRadius: 4, showLine: false });
+    }
+
+    chartRel = new Chart(relCanvas.getContext('2d'), {
+        type: 'line',
+        data: { datasets: reliabilityDatasets },
+        options: { ...darkTheme, plugins: { ...darkTheme.plugins, legend: { display: false } }, scales: { ...darkTheme.scales, x: { ...darkTheme.scales.x, type: 'logarithmic', min: 1, max: xMaxRel }, y: { ...darkTheme.scales.y, min: yMin, max: 105, title: { ...darkTheme.scales.y.title, text: 'R(t) - %' } } } }
+    });
+
+    const lg = document.getElementById('reliability-legend');
+    if (lg) {
+        lg.innerHTML = '<span class="lg-item"><span class="lg-line lg-blue"></span>Reliability Curve</span>' +
+                       '<span class="lg-item"><span class="lg-line lg-dash-y"></span>Ongoing</span>' +
+                       '<span class="lg-item"><span class="lg-line lg-dash-r"></span>Alarm</span>' +
+                       (hasActualData ? '<span class="lg-item"><span class="lg-circle"></span>Failure event</span>' : '');
+    }
+
+    // Failure Rate Chart (Linear X)
+    const frTheme = JSON.parse(JSON.stringify(darkTheme)); // Deep copy
+    frTheme.scales.y.title.text = 'Failure Rate';
+    frTheme.scales.x.title.text = 'Next x days (hari)';
+    
+    chartFR = new Chart(document.getElementById('chart-failurerate').getContext('2d'), {
+        type: 'line',
+        data: { datasets: [
+            { label: 'Failure Rate', data: fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})), borderColor: '#00BFFF', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false },
+            { label: 'Ongoing', data: [{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}], borderColor: '#FFFF00', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, showLine: true, fill: false },
+            { label: 'Ongoing Marker', data: [{x:ed,y:cFR}], pointStyle: 'rectRot', pointBackgroundColor: '#FFFF00', pointRadius: 6, showLine: false }
+        ]},
+        options: { ...frTheme, plugins: { ...frTheme.plugins, legend: { display: false } }, scales: { ...frTheme.scales, x: { ...frTheme.scales.x, type: 'linear', min: 0 }, y: { ...frTheme.scales.y, min: 0 } } }
+    });
+}
+
+function updateCurrentDayLines(){
+    if(!chartRel||!chartFR||!appData)return;
+    const fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];
+    const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
+    const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
+    const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+
+    // Reliability Chart: Update Ongoing Line (Index 1) and Ongoing Diamond (Index 2)
+    if(chartRel.data.datasets[1]) chartRel.data.datasets[1].data = [{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}];
+    if(chartRel.data.datasets[2]) chartRel.data.datasets[2].data = [{x:ed,y:cRel}];
+    chartRel.update('none');
+
+    // Failure Rate Chart: Update Ongoing Line (Index 1) and Ongoing Diamond (Index 2)
+    if(chartFR.data.datasets[1]) chartFR.data.datasets[1].data = [{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}];
+    if(chartFR.data.datasets[2]) chartFR.data.datasets[2].data = [{x:ed,y:cFR}];
+    chartFR.update('none');
+}
         function updateUI(){if(document.getElementById('view-diagram').classList.contains('active'))updateDiagramColors();else if(document.getElementById('view-table').classList.contains('active'))renderTable(currentComponentId);}
 
         // Function to read CADEN data and update the UI (Polls every 1 second)
