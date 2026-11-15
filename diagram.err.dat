@@ -1,0 +1,167 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram id="three-phase-separator" name="Three-Phase Separator">
+    <mxGraphModel dx="1334" dy="778" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wellhead" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;WELLHEAD&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Oil + Gas + Water&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="240" x="20" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="esdv" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;ESDV-101&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="85" width="150" x="305" y="318" as="geometry" />
+        </mxCell>
+        <mxCell id="vessel" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;size=18;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;Vessel-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;&quot;&gt;3-PHASE SEPARATOR&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="220" x="505" y="298" as="geometry" />
+        </mxCell>
+        <mxCell id="psv" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;PSV-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Pressure Safety Valve&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="85" width="205" x="790" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="flare" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;FLARE SYSTEM&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="85" width="255" x="1040" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="gas" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;Gas&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="42" width="82" x="835" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="pt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;PT-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Pressure Transmitter&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="220" x="1045" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="pic" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;PIC-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Pressure Indicating&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Controller&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="95" width="215" x="1310" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="pcv" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;PCV-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Pressure Control&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Valve&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="95" width="195" x="1565" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="water" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;Water&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="42" width="94" x="835" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="water_treatment" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;PRODUCED WATER&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;TREATMENT&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="95" width="310" x="985" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="oil" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;Oil&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="42" width="82" x="835" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="pi" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;PI-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Pressure Indicator&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="205" x="1010" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="pump" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;P-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;OIL PUMP&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="180" x="1270" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="nrv" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;NRV-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;Non Return Valve&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="185" x="1500" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="oil_storage" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;OIL STORAGE TANK&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="260" x="1720" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="gas_out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;Gas outlet&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="42" width="155" x="800" y="605" as="geometry" />
+        </mxCell>
+        <mxCell id="fuel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;FUEL GAS&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="75" width="190" x="180" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="gt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;GT-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;GAS TURBINE&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="85" width="260" x="435" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="drive" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;Mechanical drive&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="42" width="220" x="760" y="685" as="geometry" />
+        </mxCell>
+        <mxCell id="compressor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;K-101&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:19px;font-weight:normal;&quot;&gt;GAS COMPRESSOR&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="85" width="300" x="1030" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="export" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#1762A5;strokeWidth=2;fontColor=#071727;fontSize=19;fontFamily=Arial;align=center;verticalAlign=middle;spacing=5;" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;span style=&quot;font-size:25px;font-weight:bold;&quot;&gt;GAS EXPORT&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="75" width="255" x="1390" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_wellhead_esdv" edge="1" parent="1" source="wellhead" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="esdv" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_esdv_vessel" edge="1" parent="1" source="esdv" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="vessel" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_vessel_psv" edge="1" parent="1" source="vessel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="psv" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="755" y="320" />
+              <mxPoint x="755" y="78" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_psv_flare" edge="1" parent="1" source="psv" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="flare" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_vessel_gas" edge="1" parent="1" source="vessel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="gas" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="775" y="335" />
+              <mxPoint x="775" y="216" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_gas_pt" edge="1" parent="1" source="gas" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="pt" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_pt_pic" edge="1" parent="1" source="pt" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="pic" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_pic_pcv" edge="1" parent="1" source="pic" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="pcv" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_vessel_water" edge="1" parent="1" source="vessel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="water" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_water_treatment" edge="1" parent="1" source="water" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="water_treatment" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_vessel_oil" edge="1" parent="1" source="vessel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="oil" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="775" y="390" />
+              <mxPoint x="775" y="521" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_oil_pi" edge="1" parent="1" source="oil" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="pi" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_pi_pump" edge="1" parent="1" source="pi" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="pump" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_pump_nrv" edge="1" parent="1" source="pump" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="nrv" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_nrv_storage" edge="1" parent="1" source="nrv" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="oil_storage" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_vessel_gasout" edge="1" parent="1" source="vessel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="gas_out" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="748" y="415" />
+              <mxPoint x="748" y="626" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_gasout_compressor" edge="1" parent="1" source="gas_out" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="compressor" value="">
+          <mxGeometry relative="1" x="0.1079" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="626" />
+              <mxPoint x="1000" y="690" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_fuel_gt" edge="1" parent="1" source="fuel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="gt" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_gt_drive" edge="1" parent="1" source="gt" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;strokeColor=#53788F;" target="drive" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_compressor_export" edge="1" parent="1" source="compressor" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;" target="export" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n3p2Qt6MSvMdfi0posvS-1" edge="1" parent="1" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1762A5;strokeWidth=2.5;endArrow=blockThin;endFill=1;strokeColor=#53788F;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="compressor" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="980" y="707.5" as="sourcePoint" />
+            <mxPoint x="1045" y="707.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
