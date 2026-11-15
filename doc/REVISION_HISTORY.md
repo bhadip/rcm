@@ -64,3 +64,9 @@
 - **Dynamic Status Coloring:** Implemented surgical attribute stripping for the 11 tracked components, allowing CSS-driven Green/Yellow/Red status updates based on Excel data, while perfectly preserving Draw.io's native styling for non-tracked elements (arrows, WELLHEAD, FLARE, etc.).
 - **Dark Mode / Black Canvas Fix:** Forced `color-scheme: light` and explicit background colors on the SVG root to prevent macOS Dark Mode from rendering the diagram canvas and boxes as solid black.
 - **Data Integrity:** Eliminated persistent "garbage JSON" injection by rebuilding the diagram source and sanitizing the build pipeline.
+
+### v0.9.17
+- **Real SVG Diagram Integration:** Replaced legacy JPG + manual SVG overlay with a fully inline, scalable SVG diagram exported from Draw.io.
+- **Dynamic Status Coloring:** Implemented surgical attribute stripping for the 11 tracked components, allowing CSS-driven Green/Yellow/Red status updates based on Excel data, while perfectly preserving Draw.io's native styling for non-tracked elements (arrows, WELLHEAD, FLARE, etc.).
+- **Dark Mode / Black Canvas Fix:** Forced `color-scheme: light` and explicit background colors on the SVG root to prevent macOS Dark Mode from rendering the diagram canvas and boxes as solid black.
+- **Data Integrity:** Eliminated persistent "garbage JSON" injection by rebuilding the diagram source and sanitizing the build pipeline.
