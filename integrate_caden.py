@@ -1,76 +1,39 @@
-# integrate_caden.py (Updated for v0.3.0 & Layout Fix)
-import os
-import re
+# Version: v0.3.3 (takes FULL CADEN block; neutralizes embedded </script> to <\/script>)
+import re, os, sys
+SRC="caden_script.txt"; HTML="index.html"
+if not os.path.exists(SRC): print("❌ caden_script.txt not found"); sys.exit(1)
+if not os.path.exists(HTML): print("❌ index.html not found"); sys.exit(1)
+raw=open(SRC,encoding="utf-8").read()
 
-HTML_FILE = "index.html"
-CADEN_SCRIPT_FILE = "caden_script.txt"
+# Locate the FIRST <script> and the LAST </script> (case-insensitive) to capture the WHOLE block
+lo=re.search(r'<script[^>]*>',raw,re.IGNORECASE)
+hi=re.search(r'</script>',raw,re.IGNORECASE)
+if not lo or not hi:
+    print("❌ No <script> block found in caden_script.txt"); sys.exit(1)
+last_close=None
+for m in re.finditer(r'</script>',raw,re.IGNORECASE): last_close=m
+inner=raw[lo.end():last_close.start()]
 
-def get_html_version(content):
-    match = re.search(r'v(\d+\.\d+\.\d+)', content)
-    return match.group(1) if match else "Unknown"
+# Neutralize ANY embedded </script> inside the JS body so it can't prematurely close our wrapper.
+# '<\/script>' === '</script>' at JS runtime, but the HTML parser no longer sees a closer.
+inner=inner.replace('</script>','<\\/script>').replace('</SCRIPT>','<\\/SCRIPT>')
 
-def get_caden_version(content):
-    match = re.search(r'const\s+CADEN_VERSION\s*=\s*["\']([^"\']+)["\']', content)
-    return match.group(1) if match else "Unknown"
+ver=re.search(r'CADEN_VERSION\s*=\s*["\']([^"\']+)["\']',inner)
+v=ver.group(1) if ver else "unknown"
+print(f"📦 CADEN version (from CADEN_VERSION): {v}")
 
-def integrate_caden():
-    print(f"🔍 Checking files...")
-    
-    if not os.path.exists(HTML_FILE):
-        print(f"❌ Error: {HTML_FILE} not found in this directory.")
-        return
-    if not os.path.exists(CADEN_SCRIPT_FILE):
-        print(f"❌ Error: {CADEN_SCRIPT_FILE} not found in this directory.")
-        return
+block='<!-- START CADEN LICENSING -->\n<script>\n'+inner.strip()+'\n</script>\n<!-- END CADEN LICENSING -->'
 
-    # 1. Read the new CADEN script
-    with open(CADEN_SCRIPT_FILE, 'r', encoding='utf-8') as f:
-        caden_content = f.read().strip()
+html=open(HTML,encoding="utf-8").read()
+# Remove any prior CADEN block (incl. malformed) + leaked governance text
+html=re.sub(r'<!--\s*START CADEN LICENSING[\s\S]*?<!--\s*END CADEN LICENSING\s*-->','',html)
+html=re.sub(r'<!--\s*START CADEN LICENSING[\s\S]*?</script>','',html)
+html=re.sub(r'<!--\s*GOVERNANCE COMPONENT[^>]*-->','',html,flags=re.IGNORECASE)
+html=re.sub(r'\n\s*GOVERNANCE COMPONENT[^\n]*-->','',html,flags=re.IGNORECASE)
 
-    caden_version = get_caden_version(caden_content)
-    print(f"   -> Detected CADEN Script Version: {caden_version}")
+html=html.replace('</head>',block+'\n</head>',1)
+if 'padding-right:170px' not in html:
+    html=html.replace('header{','header{padding-right:170px;',1)
 
-    # 2. Read the main index.html
-    with open(HTML_FILE, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-
-    html_version = get_html_version(html_content)
-    print(f"   -> Detected index.html Version: {html_version}")
-
-    # 3. Remove any existing CADEN block
-    old_caden_pattern = re.compile(r'<!-- START CADEN LICENSING.*?-->.*?<!-- END CADEN LICENSING.*?-->', re.DOTALL | re.IGNORECASE)
-    html_content = old_caden_pattern.sub('', html_content).strip()
-    print("🧹 Removed old CADEN script (if any).")
-
-    # 4. FIX LAYOUT CONFLICT: Add padding to header to prevent badge from blocking buttons
-    # Look for the header CSS block and add padding-right if it's not already there
-    header_css_pattern = re.compile(r'(header\s*\{[^}]*?)(\})', re.DOTALL)
-    match = header_css_pattern.search(html_content)
-    if match:
-        current_header_css = match.group(1)
-        if 'padding-right' not in current_header_css:
-            # Insert padding-right before the closing brace
-            new_header_css = current_header_css + ' padding-right: 170px; '
-            html_content = html_content.replace(current_header_css, new_header_css)
-            print("🎨 Applied CSS fix: Added padding-right to header to protect 'Calibrate SVG' button.")
-        else:
-            print("🎨 Header CSS already has padding-right. Skipping CSS fix.")
-
-    # 5. Inject the new CADEN script before </head>
-    head_pattern = re.compile(r'(</head>)', re.IGNORECASE)
-    
-    if head_pattern.search(html_content):
-        new_html_content = head_pattern.sub(f'{caden_content}\n\\1', html_content, count=1)
-        
-        # 6. Save the file
-        with open(HTML_FILE, 'w', encoding='utf-8') as f:
-            f.write(new_html_content)
-            
-        print(f"\n✅ Integration Complete!")
-        print(f"   📄 File: {HTML_FILE} (v{html_version})")
-        print(f"   🔒 CADEN: v{caden_version}")
-    else:
-        print(f"❌ Error: Could not find the closing </head> tag in {HTML_FILE}.")
-
-if __name__ == "__main__":
-    integrate_caden()
+open(HTML,"w",encoding="utf-8").write(html)
+print(f"✅ CADEN v{v} injected (embedded </script> neutralized). Badge/Device ID will render.")

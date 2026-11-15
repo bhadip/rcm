@@ -54,3 +54,7 @@
 - Ongoing = yellow dashed L-line + yellow diamond at intersection; Alarm = bright-red dashed L-line + red cross at intersection; Failure events = small white circles on the curve.
 - Conditional red chart border when a Failure Mode has actual failure-event data.
 - Intersection markers move correctly with the slider (separated line vs. marker datasets).
+
+### v0.9.10
+- **Intro video timing (real fix):** Decoupled app-reveal from intro-play. The intro now plays ONLY when the genuine `CADEN_READY` event fires (i.e. after registration/licensing completes). The 3s fail-open fallback reveals the app *without* the video, so the clip can no longer run over the registration form, and a broken CADEN still never bricks the UI.
+- **Level 2 toolbar:** "Reset Layout" moved to the right edge (mirroring "Back to Table" on the left); Failure Mode name centered. Both buttons share the grey→blue hover.

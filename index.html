@@ -1,106 +1,132 @@
-<!-- Version: v0.7.10 -->
+<!-- Version: v0.9.10 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <style> body { opacity: 0; transition: opacity 0.2s ease-in; } </style>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCM Reliability Dashboard v0.7.10</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F172A'/%3E%3Cpath d='M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z' fill='%231E293B' stroke='%233B82F6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%2310B981' stroke-width='4'/%3E%3Cpath d='M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34' stroke='%2310B981' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-    <script src="crypto-js.min.js"></script>
-    <script src="chart.umd.js"></script>
-    <style>
-        :root { --primary:#2c3e50; --secondary:#34495e; --accent:#3498db; --bg:#f4f6f9; --card-bg:#fff; --green:#2ecc71; --yellow:#f1c40f; --red:#e74c3c; --text:#333; }
-        body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; margin:0; padding:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; }
-        header { background:var(--primary); color:#fff; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,.1); padding-right:170px; min-height:64px; }
-        .brand { display:flex; align-items:center; gap:12px; }
-        header h1 { margin:0; font-size:1.2rem; }
-        .version-badge { background:var(--accent); padding:4px 8px; border-radius:4px; font-size:.8rem; font-weight:bold; margin-left:10px; }
-        footer { margin-top:auto; background:var(--secondary); color:#bdc3c7; text-align:center; padding:10px; font-size:.85rem; }
-        #app-container { flex:1; padding:20px; max-width:1400px; margin:0 auto; width:100%; box-sizing:border-box; }
-        .view{display:none;} .view.active{display:block;}
-        .card { background:var(--card-bg); border-radius:8px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); margin-bottom:20px; }
-        .btn { background:var(--accent); color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-size:1rem; margin-right:5px; }
-        .btn:hover{background:#2980b9;} .btn-secondary{background:#95a5a6;} .btn-success{background:#27ae60;}
-        #diagram-wrapper { position:relative; width:100%; max-width:1300px; margin:0 auto; }
-        #diagram-wrapper img { width:100%; display:block; }
-        #diagram-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-        .clickable-area { fill:transparent; stroke:transparent; stroke-width:2px; cursor:pointer; pointer-events:auto; transition:all .2s ease; }
-        .clickable-area:hover { fill:rgba(0,123,255,.15); stroke:#007bff; stroke-dasharray:5,5; }
-        .comp-green{fill:rgba(46,204,113,.4)!important;stroke:#2ecc71!important;}
-        .comp-yellow{fill:rgba(241,196,15,.4)!important;stroke:#f1c40f!important;}
-        .comp-red{fill:rgba(231,76,60,.4)!important;stroke:#e74c3c!important;}
-        table { width:100%; border-collapse:collapse; margin-top:10px; }
-        th,td { padding:12px; text-align:left; border-bottom:1px solid #eee; }
-        th { background:#f8f9fa; font-weight:600; }
-        tr:hover { background:#f1f1f1; }
-        .status-cell { font-weight:bold; text-align:center; }
-        .status-green{color:var(--green);} .status-yellow{color:#d4ac0d;} .status-red{color:var(--red);}
-        .slider-container { background:#fff; padding:15px; border-radius:8px; display:flex; align-items:center; gap:15px; box-shadow:0 2px 5px rgba(0,0,0,.05); position:sticky; bottom:20px; z-index:100; flex-wrap:wrap; }
-        .slider-container input[type=range] { flex:1; min-width:200px; }
-        .day-display { font-weight:bold; min-width:120px; text-align:right; }
-        .slider-note { font-size:.85rem; color:#7f8c8d; font-style:italic; width:100%; margin-top:5px; }
-        .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-        @media (max-width:768px){ .charts-grid{grid-template-columns:1fr;} }
-        .chart-box { background:#000000; padding:15px; border-radius:4px; height:400px; border: 2px solid transparent; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: border-color 0.3s ease; }
-.chart-box.has-actual-data { border-color: #FF0000; }
-        .calibration-mode #diagram-overlay{pointer-events:auto;}
-        .calibration-mode .clickable-area{fill:rgba(255,0,0,.2);stroke:red;cursor:move;}
-        #calibration-controls{display:none;position:fixed;top:70px;right:20px;background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:500;max-width:300px;}
-        .calibration-mode #calibration-controls{display:block;}
-        #calibration-controls label{display:block;margin:5px 0;font-size:.9rem;}
-        #calibration-controls select,#calibration-controls input{width:100%;padding:5px;margin:5px 0;}
-        .maint-date-input{padding:5px;border:1px solid #ddd;border-radius:4px;width:100%;box-sizing:border-box;}
-        .log-controls{margin-bottom:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-        .log-controls-group{display:flex;gap:10px;align-items:center;border-right:1px solid #ddd;padding-right:15px;}
-        .log-controls-group:last-child{border-right:none;}
-        .fm-details { margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.9rem; }
-        .fm-details strong { color: var(--primary); }
-        #caden-license-panel .col{display:flex;flex-direction:column;gap:2px;}
-        #caden-license-panel .lbl{opacity:.7;text-transform:uppercase;letter-spacing:.5px;font-size:9px;}
-        #caden-license-panel .val{color:#fff;font-weight:600;}
-    </style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCM Reliability Dashboard v0.9.10</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F172A'/%3E%3Cpath d='M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z' fill='%231E293B' stroke='%233B82F6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%2310B981' stroke-width='4'/%3E%3Cpath d='M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34' stroke='%2310B981' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<script src="crypto-js.min.js"></script>
+<script src="chart.umd.js"></script>
 <style>
-    footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--secondary);color:#bdc3c7;font-size:.85rem;}
-    .footer-left,.footer-right{flex:1;min-width:200px;}
-    .footer-left{text-align:left;}
-    .footer-right{text-align:right;}
-    .footer-center{flex:2;text-align:center;}
-    .footer-center div{margin:2px 0;}
-    #footer-user-name,#footer-license-expiry{color:#fff;font-weight:600;}
+:root{--primary:#2c3e50;--secondary:#34495e;--accent:#3498db;--bg:#f4f6f9;--card-bg:#fff;--green:#2ecc71;--yellow:#f1c40f;--red:#e74c3c;--text:#333;}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:0;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100vh;}
+header{background:var(--primary);color:#fff;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.1);padding-right:170px;min-height:64px;}
+.brand{display:flex;align-items:center;gap:12px;}
+header h1{margin:0;font-size:1.2rem;}
+.version-badge{background:var(--accent);padding:4px 8px;border-radius:4px;font-size:.8rem;font-weight:bold;margin-left:10px;}
+footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--secondary);color:#bdc3c7;font-size:.85rem;margin-top:auto;}
+.footer-left,.footer-right{flex:1;min-width:200px;}
+.footer-left{text-align:left;}.footer-right{text-align:right;}.footer-center{flex:2;text-align:center;}
+#footer-user-name,#footer-license-expiry{color:#fff;font-weight:600;}
+#app-container{flex:1;padding:20px;max-width:1400px;margin:0 auto;width:100%;box-sizing:border-box;display:none;opacity:0;transition:opacity .4s ease;}
+#app-container.visible{display:block;opacity:1;}
+.view{display:none;}.view.active{display:block;}
+.card{background:var(--card-bg);border-radius:8px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:20px;}
+.btn{background:#95a5a6;color:#fff;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:1rem;margin-right:5px;transition:background .2s;}
+.btn:hover{background:var(--accent);}
+.btn-secondary{background:#95a5a6;}.btn-success{background:#27ae60;}
+.btn-success:hover{background:#219a52;}
+#diagram-wrapper{position:relative;width:100%;max-width:1300px;margin:0 auto;}
+#diagram-wrapper img{width:100%;display:block;}
+#diagram-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.clickable-area{fill:transparent;stroke:transparent;stroke-width:2px;cursor:pointer;pointer-events:auto;transition:all .2s ease;}
+.clickable-area:hover{fill:rgba(0,123,255,.15);stroke:#007bff;stroke-dasharray:5,5;}
+.comp-green{fill:rgba(46,204,113,.4)!important;stroke:#2ecc71!important;}
+.comp-yellow{fill:rgba(241,196,15,.4)!important;stroke:#f1c40f!important;}
+.comp-red{fill:rgba(231,76,60,.4)!important;stroke:#e74c3c!important;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;}
+th{background:#f8f9fa;font-weight:600;}
+tr:hover{background:#f1f1f1;}
+.status-cell{font-weight:bold;text-align:center;}
+.status-green{color:var(--green);}.status-yellow{color:#d4ac0d;}.status-red{color:var(--red);}
+.maint-date-input{padding:5px;border:1px solid #ddd;border-radius:4px;width:100%;box-sizing:border-box;}
+.log-controls{margin-bottom:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.log-controls-group{display:flex;gap:10px;align-items:center;border-right:1px solid #ddd;padding-right:15px;}
+.log-controls-group:last-child{border-right:none;}
+.slider-container{background:#fff;padding:15px;border-radius:8px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 5px rgba(0,0,0,.05);position:sticky;bottom:20px;z-index:100;flex-wrap:wrap;}
+.slider-container input[type=range]{flex:1;min-width:200px;}
+.day-display{font-weight:bold;min-width:120px;text-align:right;}
+.slider-note{font-size:.85rem;color:#7f8c8d;font-style:italic;width:100%;margin-top:5px;}
+
+/* Level 2 toolbar (Back to Table + Reset Layout + FM title) */
+.level2-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap;}
+.level2-toolbar .toolbar-left{display:flex;gap:10px;align-items:center;}
+.level2-toolbar .toolbar-right{display:flex;gap:10px;align-items:center;justify-content:flex-end;}
+.level2-toolbar .fm-title{font-size:1.1rem;font-weight:bold;color:var(--primary);margin:0;}
+#reset-layout-btn{display:none;}
+#reset-layout-btn.visible{display:inline-block;}
+
+/* Quadrant grid */
+.quadrants-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 2.4fr;gap:0;height:calc(100vh - 280px);min-height:500px;position:relative;}
+.quad{overflow:hidden;display:flex;flex-direction:column;position:relative;}
+.q1,.q2{background:#f8f9fa;padding:15px;border:1px solid #e3e7ee;}
+.q1 h3,.q2 h3{margin:0 0 10px;font-size:1rem;color:var(--primary);border-bottom:2px solid #eee;padding-bottom:5px;}
+.q1{overflow:auto;}
+.q2{padding:0;}
+.q2 .equip-wrap{flex:1;display:flex;justify-content:center;align-items:center;background:#fff;overflow:hidden;min-height:0;}
+#equip-img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in;transition:transform .2s;}
+#equip-img:hover{transform:scale(1.02);}
+.q3,.q4{background:#000;position:relative;}
+.chart-box{height:100%;display:flex;flex-direction:column;border:2px solid transparent;transition:border-color .3s ease;box-shadow:0 4px 15px rgba(0,0,0,.5);position:relative;}
+.chart-box.has-actual-data{border-color:#FF0000;}
+.chart-canvas-wrap{flex:1;position:relative;width:100%;min-height:0;}
+.chart-legend{display:flex;justify-content:center;flex-wrap:wrap;gap:18px;padding:8px 12px;color:#fff;font-size:11px;font-family:'Segoe UI',Tahoma,sans-serif;}
+.chart-legend .lg-item{display:flex;align-items:center;gap:6px;}
+.chart-legend .lg-line{display:inline-block;width:32px;height:0;border-top:2px solid #00BFFF;}
+.chart-legend .lg-dash-y{border-top:2px dashed #FFFF00;}
+.chart-legend .lg-dash-r{border-top:3px dashed #FF0000;}
+.chart-legend .lg-circle{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;}
+.zoom-btn{position:absolute;top:8px;right:8px;z-index:50;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.zoom-btn:hover{background:rgba(255,255,255,.3);}
+.resize-handle{position:absolute;background:rgba(0,0,0,.08);z-index:120;transition:background .15s;}
+.resize-handle:hover,.resize-handle.active{background:rgba(52,152,219,.7);}
+.resize-h{left:0;width:100%;height:7px;cursor:row-resize;}
+.resize-v{top:0;height:100%;width:7px;cursor:col-resize;}
+
+/* Chart zoom modal */
+#chart-zoom-modal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10003;display:none;justify-content:center;align-items:center;padding:20px;}
+#chart-zoom-modal.show{display:flex;}
+.zoom-content{background:#000;border-radius:8px;padding:20px;max-width:95vw;max-height:95vh;width:100%;display:flex;flex-direction:column;position:relative;}
+.zoom-close{position:absolute;top:10px;right:14px;background:transparent;color:#fff;border:none;font-size:28px;cursor:pointer;z-index:10;}
+.zoom-close:hover{color:#FF0000;}
+.zoom-chart-wrap{flex:1;min-height:400px;position:relative;}
+.zoom-chart-wrap canvas{width:100%!important;height:100%!important;}
+.zoom-slider-wrap{margin-top:15px;padding:12px;background:#111;border-radius:6px;display:flex;align-items:center;gap:15px;color:#fff;font-size:13px;}
+.zoom-slider-wrap input[type=range]{flex:1;}
+
+/* Intro overlay */
+#intro-overlay{position:fixed;inset:0;background:#000;z-index:9999;display:none;justify-content:center;align-items:center;flex-direction:column;opacity:0;transition:opacity 1s ease;}
+#intro-overlay.show{display:flex;}
+#intro-overlay.fade{opacity:1;}
+#intro-video{width:100%;height:100%;object-fit:contain;}
+#skip-btn{position:absolute;bottom:28px;right:28px;background:rgba(255,255,255,.18);color:#fff;border:1px solid #fff;padding:9px 18px;border-radius:5px;cursor:pointer;font-size:13px;z-index:10000;}
+#skip-btn:hover{background:rgba(255,255,255,.4);}
+#start-btn{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#007bff;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-size:16px;z-index:10001;}
+
+/* Lightbox */
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:10002;display:none;justify-content:center;align-items:center;cursor:zoom-out;}
+#lightbox img{max-width:90%;max-height:90%;border-radius:4px;}
+
+/* Calibration */
+.calibration-mode #diagram-overlay{pointer-events:auto;}
+.calibration-mode .clickable-area{fill:rgba(255,0,0,.2);stroke:red;cursor:move;}
+#calibration-controls{display:none;position:fixed;top:70px;right:20px;background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:500;max-width:300px;}
+.calibration-mode #calibration-controls{display:block;}
+#calibration-controls label{display:block;margin:5px 0;font-size:.9rem;}
+#calibration-controls select,#calibration-controls input{width:100%;padding:5px;margin:5px 0;}
 </style>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-<style>
-    .chart-box{display:flex;flex-direction:column;}
-    .chart-canvas-wrap{flex:1;position:relative;min-height:0;}
-    .chart-legend{display:flex;justify-content:center;flex-wrap:wrap;gap:18px;margin-top:10px;color:#fff;font-size:11px;font-family:'Segoe UI',Tahoma,sans-serif;}
-    .chart-legend .lg-item{display:flex;align-items:center;gap:6px;}
-    .chart-legend .lg-line{display:inline-block;width:32px;height:0;border-top:2px solid #00BFFF;}
-    .chart-legend .lg-dash-y{border-top:2px dashed #FFFF00;}
-    .chart-legend .lg-dash-r{border-top:3px dashed #FF0000;}
-    .chart-legend .lg-circle{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;}
-</style>
-<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.3) -->
+<!-- START CADEN LICENSING -->
 <script>
 (function () {
-    const CADEN_VERSION = "0.6.5";
+    const CADEN_VERSION = "0.6.8";
     const CADEN_CONFIG = {
         appId: "RCM",
-        appVersion: typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown',
+        appVersion: (typeof APP_BUILD_META !== 'undefined' && APP_BUILD_META.appVersion) ? APP_BUILD_META.appVersion : (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown'),
         serverUrl: "https://caden.prasanti.com",
         wssUrl: "wss://caden.prasanti.com/v1/stream",
         trialDays: 3, 
@@ -108,762 +134,550 @@
     };
 
     const KEYS = {
-        token: `${CADEN_CONFIG.appId}_AUTH_TOKEN`,
-        timeline: `${CADEN_CONFIG.appId}_LAST_SEEN`,
-        genesis: `${CADEN_CONFIG.appId}_GENESIS_BUNCH`,
-        logs: `${CADEN_CONFIG.appId}_LOG_BUFFER`,
-        uuid: `${CADEN_CONFIG.appId}_PERSISTENT_UUID`,
-        userInfo: `${CADEN_CONFIG.appId}_USER_INFO`,
-        serverTrialDays: `${CADEN_CONFIG.appId}_SERVER_TRIAL_DAYS`,
-        appealStatus: `${CADEN_CONFIG.appId}_APPEAL_STATUS`,
-        revokedStatus: `${CADEN_CONFIG.appId}_IS_REVOKED`
+        token: CADEN_CONFIG.appId + '_AUTH_TOKEN',
+        userInfo: CADEN_CONFIG.appId + '_USER_INFO',
+        genesis: CADEN_CONFIG.appId + '_GENESIS'
     };
 
-    function revealApp() {
-        if (document.body) {
-            document.body.style.opacity = '1';
-            document.body.style.pointerEvents = 'auto';
-        }
-    }
-
-    function collectSystemInfo() {
-        return {
-            userAgent: navigator.userAgent, platform: navigator.platform,
-            cpuCores: navigator.hardwareConcurrency || 'Unknown',
-            deviceMemory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Unknown',
-            screenRes: `${screen.width}x${screen.height}`,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            webglRenderer: (() => {
-                try {
-                    const c = document.createElement('canvas');
-                    const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
-                    if (gl) { const d = gl.getExtension('WEBGL_debug_renderer_info'); return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : 'WebGL supported'; }
-                    return 'Not supported';
-                } catch (e) { return 'Error'; }
-            })(),
-            cadenVersion: CADEN_VERSION,
-            ...((typeof APP_BUILD_META !== 'undefined') ? APP_BUILD_META : ((typeof RCM_BUILD_META !== 'undefined') ? RCM_BUILD_META : {}))
-        };
-    }
-
-    function getPersistentUUID() {
-        let uuid = localStorage.getItem(KEYS.uuid);
-        if (!uuid) {
-            uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16);
-            });
-            localStorage.setItem(KEYS.uuid, uuid);
-        }
-        return uuid;
-    }
-
+    // --- HARDWARE-ONLY FINGERPRINT (v0.6.6+) ---
     function generateDeviceFingerprint() {
         try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.textBaseline = "top"; ctx.font = "14px 'Arial'";
-            ctx.fillStyle = "#f60"; ctx.fillRect(125, 1, 62, 20);
-            ctx.fillStyle = "#069"; ctx.fillText("CADEN_V1", 2, 15);
-            const ctxString = canvas.toDataURL();
+            const parts = [];
+            parts.push('W:' + screen.width);
+            parts.push('H:' + screen.height);
+            parts.push('CPU:' + (navigator.hardwareConcurrency || 0));
+            parts.push('RAM:' + (navigator.deviceMemory || 0));
+            parts.push('TZ:' + (Intl.DateTimeFormat().resolvedOptions().timeZone || ''));
+            try {
+                const c = document.createElement('canvas');
+                const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+                if (gl) {
+                    const d = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (d) parts.push('GPU:' + gl.getParameter(d.UNMASKED_RENDERER_WEBGL));
+                }
+            } catch(e) {}
+            const combined = parts.join('|');
             let hash = 0;
-            const inputs = ctxString + navigator.userAgent + screen.width + screen.height + navigator.hardwareConcurrency;
-            for (let i = 0; i < inputs.length; i++) { const char = inputs.charCodeAt(i); hash = ((hash << 5) - hash) + char; hash |= 0; }
-            // Prefix based on App ID (e.g., RCM_DASHBOARD -> RCM)
-            const prefix = CADEN_CONFIG.appId.toUpperCase();
-            return prefix + "-" + Math.abs(hash).toString(16).toUpperCase() + "-" + getPersistentUUID().split('-')[0];
-        } catch (e) { return "RCM-GENERIC-" + getPersistentUUID().split('-')[0]; }
-    }
-
-    window.storeSystemTelemetry = function(type, messagePayload, level = 2) {
-        if (level > CADEN_CONFIG.logLevel) return;
-        let logBuffer = [];
-        try { logBuffer = JSON.parse(localStorage.getItem(KEYS.logs)) || []; } catch(e) {}
-        logBuffer.push({ version: CADEN_VERSION, epoch: Date.now(), level: level, type: type, detail: messagePayload, device: generateDeviceFingerprint(), system_info: collectSystemInfo() });
-        if (logBuffer.length > 100) logBuffer = logBuffer.slice(-100);
-        try { localStorage.setItem(KEYS.logs, JSON.stringify(logBuffer)); } catch(e) {}
-    };
-    
-    // Enhanced error tracking with navigation context
-    let activeTab = 'Main';
-    document.addEventListener('click', function(e) {
-        if (e.target.classList && e.target.classList.contains('tab-btn')) activeTab = e.target.textContent.trim();
-    });
-    
-    window.onerror = function(msg, url, line, col, error) { 
-        const ctx = { activeTab: activeTab, url: url, line: line };
-        window.storeSystemTelemetry("RUNTIME_ERROR", `${msg} at line ${line} in ${url} | NAV: ${JSON.stringify(ctx)}`, 1); 
-        return false; 
-    };
-    window.logCadenOperation = function(operationName, detail) { if (CADEN_CONFIG.logLevel >= 2) window.storeSystemTelemetry("OPERATION", `${operationName}: ${detail}`, 2); };
-
-    async function dischargeBufferedTelemetry() {
-        if (!navigator.onLine) return;
-        const bufferData = localStorage.getItem(KEYS.logs);
-        if (!bufferData || bufferData === "[]") return;
-        try {
-            const response = await fetch(`${CADEN_CONFIG.serverUrl}/v1/telemetry`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appId: CADEN_CONFIG.appId, entries: JSON.parse(bufferData) }) });
-            if (response.ok) localStorage.setItem(KEYS.logs, JSON.stringify([]));
-        } catch (err) {}
-    }
-
-    function showRegistrationModal(isAppeal = false) {
-        if (document.getElementById('caden-reg-modal')) return;
-        revealApp();
-        const modal = document.createElement('div');
-        modal.id = 'caden-reg-modal';
-        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:100000;display:flex;align-items:center;justify-content:center;';
-        const title = isAppeal ? "License Revoked - Appeal Form" : "Welcome to RCM Dashboard";
-        const desc = isAppeal ? "Your license has been revoked. Please update your details to submit an appeal." : `Please enter your details to start your trial period.`;
-        modal.innerHTML = `<div style="background:#1e293b;border:1px solid #334155;padding:40px;border-radius:8px;max-width:400px;width:90%;font-family:sans-serif;color:#f8fafc;"><h2 style="color:${isAppeal ? '#ef4444' : '#3b82f6'};margin-top:0;">${title}</h2><p style="font-size:14px;color:#cbd5e1;margin-bottom:20px;">${desc}</p><input type="text" id="reg-name" placeholder="Full Name" style="width:100%;padding:10px;margin-bottom:10px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;"><input type="email" id="reg-email" placeholder="Email Address" style="width:100%;padding:10px;margin-bottom:10px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;"><input type="text" id="reg-wa" placeholder="WhatsApp Number" style="width:100%;padding:10px;margin-bottom:20px;background:#334155;border:none;color:white;border-radius:4px;box-sizing:border-box;"><button id="reg-submit" style="width:100%;padding:12px;background:${isAppeal ? '#ef4444' : '#3b82f6'};color:white;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">${isAppeal ? 'Submit Appeal' : 'Start Trial'}</button></div>`;
-        document.body.appendChild(modal);
-        document.getElementById('reg-submit').onclick = function() {
-            const name = document.getElementById('reg-name').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
-            const wa = document.getElementById('reg-wa').value.trim();
-            if (!name || !email || !wa) { alert("Please fill all fields."); return; }
-            localStorage.setItem(KEYS.userInfo, JSON.stringify({ name, email, whatsapp: wa }));
-            modal.remove();
-            if (isAppeal) submitRevocationAppeal(name, email, wa);
-            else {
-                localStorage.setItem(KEYS.genesis, JSON.stringify({ genesisEpoch: Date.now(), boundApp: CADEN_CONFIG.appId }));
-                window.storeSystemTelemetry("REGISTRATION", `User registered: ${name}`, 2);
-                autoActivate().then(() => showTrialDeadlineMessage());
+            for (let i = 0; i < combined.length; i++) {
+                hash = ((hash << 5) - hash) + combined.charCodeAt(i);
+                hash |= 0;
             }
+            const prefix = CADEN_CONFIG.appId.split('_')[0].toUpperCase();
+            return prefix + "-" + Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+        } catch (e) { return "RCM-GENERIC-00000000"; }
+    }
+
+    // --- UI HELPERS ---
+    function executeLockdownScreen(reason) {
+        let overlay = document.getElementById('caden-lockdown-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'caden-lockdown-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0f172a;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-family:sans-serif;';
+            document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `
+            <div style="background:#1e293b;padding:2rem;border-radius:8px;text-align:center;max-width:400px;">
+                <h2 style="color:#ef4444;margin-bottom:1rem;">CADEN Governance Lockdown</h2>
+                <p style="margin-bottom:1rem;">${reason}</p>
+                <p style="font-size:0.8rem;color:#94a3b8;">Device ID: ${generateDeviceFingerprint()} | Script v${CADEN_VERSION}</p>
+            </div>`;
+        document.body.querySelectorAll(':not(#caden-lockdown-overlay)').forEach(el => { if(el.parentNode) el.style.display = 'none'; });
+        document.body.appendChild(overlay);
+    }
+
+    function revealApp() {
+        const overlay = document.getElementById('caden-lockdown-overlay');
+        if (overlay) overlay.remove();
+        const modal = document.getElementById('caden-reg-modal');
+        if (modal) modal.style.display = 'none';
+        document.body.querySelectorAll('[style*="display: none"]').forEach(el => {
+            if (el.id !== 'caden-lockdown-overlay') el.style.display = '';
+        });
+        // Dispatch event for RCM App to initialize
+        window.dispatchEvent(new CustomEvent('CADEN_READY'));
+        window.cadenInitialized = true;
+    }
+
+    function showRegistrationModal(isAppeal) {
+        let modal = document.getElementById('caden-reg-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'caden-reg-modal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:999998;display:flex;align-items:center;justify-content:center;';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div style="background:#fff;padding:2rem;border-radius:8px;width:300px;color:#000;">
+                <h3 style="margin-top:0;">CADEN Registration</h3>
+                <input id="caden-reg-name" placeholder="Full Name" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;">
+                <input id="caden-reg-email" placeholder="Email" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;">
+                <input id="caden-reg-wa" placeholder="WhatsApp" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;">
+                <button id="caden-reg-submit" style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;">Activate</button>
+            </div>`;
+        modal.style.display = 'flex';
+        
+        document.getElementById('caden-reg-submit').onclick = async () => {
+            const name = document.getElementById('caden-reg-name').value;
+            const email = document.getElementById('caden-reg-email').value;
+            const wa = document.getElementById('caden-reg-wa').value;
+            if(!name) return alert('Name required');
+            
+            const devId = generateDeviceFingerprint();
+            const url = `${CADEN_CONFIG.serverUrl}/v1/activate?appId=${CADEN_CONFIG.appId}&deviceId=${devId}&ownerName=${encodeURIComponent(name)}&ownerEmail=${encodeURIComponent(email)}&ownerWhatsapp=${encodeURIComponent(wa)}`;
+            
+            try {
+                const res = await fetch(url, {method: 'POST'});
+                const data = await res.json();
+                if(res.ok && data.token) {
+                    localStorage.setItem(KEYS.token, data.token);
+                    localStorage.setItem(KEYS.userInfo, JSON.stringify({name, email, whatsapp: wa}));
+                    localStorage.setItem(KEYS.genesis, Date.now().toString());
+                    modal.remove();
+                    revealApp();
+                } else {
+                    alert(data.detail || 'Registration failed');
+                }
+            } catch(e) { alert('Network error'); }
         };
     }
 
-    function showTrialDeadlineMessage() {
-        if (document.getElementById('caden-trial-msg')) return;
-        const expiryDate = new Date(Date.now() + (CADEN_CONFIG.trialDays * 24 * 60 * 60 * 1000));
-        const dd = String(expiryDate.getDate()).padStart(2, '0');
-        const mm = String(expiryDate.getMonth() + 1).padStart(2, '0');
-        const yy = String(expiryDate.getFullYear()).slice(-2);
-        const hh = String(expiryDate.getHours()).padStart(2, '0');
-        const min = String(expiryDate.getMinutes()).padStart(2, '0');
-        const dateStr = `${dd}/${mm}/${yy} ${hh}:${min}`;
-        const msg = document.createElement('div');
-        msg.id = 'caden-trial-msg';
-        msg.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1e293b;border:1px solid #3b82f6;color:white;padding:20px;border-radius:8px;z-index:99999;font-family:sans-serif;font-size:14px;box-shadow:0 4px 6px rgba(0,0,0,0.3);max-width:300px;';
-        msg.innerHTML = `<div style="color:#3b82f6;font-weight:bold;margin-bottom:10px;font-size:16px;">✅ Trial Started</div><div style="margin-bottom:10px;line-height:1.5;">You are in a <b>${CADEN_CONFIG.trialDays}-day trial period</b>.</div><div style="color:#fbbf24;font-size:13px;line-height:1.4;">⚠️ You must connect to the internet before <b>${dateStr}</b> to complete registration and continue using the app.</div><button onclick="this.parentElement.remove()" style="margin-top:15px;width:100%;padding:8px;background:#334155;color:white;border:none;border-radius:4px;cursor:pointer;">I Understand</button>`;
-        document.body.appendChild(msg);
-    }
-
-    async function submitRevocationAppeal(name, email, wa) {
-        const deviceId = generateDeviceFingerprint();
-        const url = `${CADEN_CONFIG.serverUrl}/v1/appeal-revocation?appId=${CADEN_CONFIG.appId}&deviceId=${deviceId}&ownerName=${encodeURIComponent(name)}&ownerEmail=${encodeURIComponent(email)}&ownerWhatsapp=${encodeURIComponent(wa)}`;
-        try {
-            const response = await fetch(url, { method: 'POST' });
-            if (response.ok) {
-                localStorage.setItem(KEYS.appealStatus, 'PENDING');
-                window.storeSystemTelemetry("APPEAL_SUBMITTED", `Appeal submitted by ${name}`, 2);
-                _doLockdown("Appeal submitted successfully. Awaiting administrator approval. Please close this application.");
-            } else alert("Failed to submit appeal. Please try again later.");
-        } catch (err) { alert("Network error. Please connect to the internet and try again."); }
-    }
-
+    // --- CORE LOGIC ---
     async function autoActivate() {
-        const deviceId = generateDeviceFingerprint();
-        const sysInfo = JSON.stringify(collectSystemInfo());
+        const token = localStorage.getItem(KEYS.token);
+        const devId = generateDeviceFingerprint();
         const userInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+        
+        const url = `${CADEN_CONFIG.serverUrl}/v1/activate?appId=${CADEN_CONFIG.appId}&deviceId=${devId}&ownerName=${encodeURIComponent(userInfo.name||'')}&ownerEmail=${encodeURIComponent(userInfo.email||'')}&ownerWhatsapp=${encodeURIComponent(userInfo.whatsapp||'')}`;
+        
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); 
-            const url = `${CADEN_CONFIG.serverUrl}/v1/activate?appId=${CADEN_CONFIG.appId}&deviceId=${deviceId}&ownerName=${encodeURIComponent(userInfo.name || '')}&ownerEmail=${encodeURIComponent(userInfo.email || '')}&ownerWhatsapp=${encodeURIComponent(userInfo.whatsapp || '')}&systemInfo=${encodeURIComponent(sysInfo)}`;
-            const response = await fetch(url, { method: 'POST', signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (response.status === 403) {
-                let errorDetail = "";
-                try { const errData = await response.json(); errorDetail = errData.detail || ""; } catch(e) {}
-                localStorage.setItem(KEYS.revokedStatus, 'true');
-                if (errorDetail === "APPEAL_PENDING") {
-                    localStorage.setItem(KEYS.appealStatus, 'PENDING');
-                    _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-                } else showRegistrationModal(true);
+            const res = await fetch(url, {method: 'POST'});
+            const data = await res.json();
+            
+            if (!res.ok) {
+                if (data.detail === 'Device Revoked') executeLockdownScreen("License has been revoked by administrator.");
                 return;
             }
-            if (response.ok) {
-                const data = await response.json();
-                if (data.status === 'ACTIVE') {
-                    localStorage.removeItem(KEYS.revokedStatus);
-                    localStorage.removeItem(KEYS.appealStatus);
-                }
-                if (data.trial_days) {
-                    CADEN_CONFIG.trialDays = data.trial_days;
-                    localStorage.setItem(KEYS.serverTrialDays, data.trial_days);
-                }
-                if (data.owner_name) {
-                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-                    currentInfo.name = data.owner_name;
-                    currentInfo.email = data.owner_email;
-                    currentInfo.whatsapp = data.owner_whatsapp;
-                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
-                }
 
-                if (data.owner_name) {
-                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-                    currentInfo.name = data.owner_name;
-                    currentInfo.email = data.owner_email;
-                    currentInfo.whatsapp = data.owner_whatsapp;
-                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
-                }
-
-                if (data.owner_name) {
-                    const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-                    currentInfo.name = data.owner_name;
-                    currentInfo.email = data.owner_email;
-                    currentInfo.whatsapp = data.owner_whatsapp;
-                    localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
-                }
-
-                if (data.token) {
-                    const existingToken = localStorage.getItem(KEYS.token);
-                    if (existingToken) {
-                        const existingExp = JSON.parse(atob(existingToken.split('.')[1])).exp;
-                        const newExp = JSON.parse(atob(data.token.split('.')[1])).exp;
-                        if (newExp <= existingExp) { revealApp(); return; }
-                    }
-                    localStorage.setItem(KEYS.token, data.token);
-                    window.storeSystemTelemetry("ACTIVATION", "Device activated successfully.", 2);
-                    revealApp(); 
-                } else {
-                    if (data.status === 'ACTIVE' || localStorage.getItem(KEYS.token)) revealApp();
-                    else showRegistrationModal(false);
+            // FAIL-OPEN LOGIC
+            const now = Math.floor(Date.now() / 1000);
+            const gracePeriod = 300; // 5 mins
+            
+            if (data.status === "REVOKED") {
+                executeLockdownScreen("License has been revoked.");
+                return;
+            }
+            
+            if (data.expires_at) {
+                const expDate = new Date(data.expires_at).getTime() / 1000;
+                if (expDate < (now - gracePeriod)) {
+                    executeLockdownScreen("License has expired.");
+                    return;
                 }
             }
-        } catch (err) { 
-            window.storeSystemTelemetry("ACTIVATION_ERROR", `Failed: ${err.message}`, 1);
-            if ((localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) && !localStorage.getItem(KEYS.revokedStatus)) revealApp();
-            else if (localStorage.getItem(KEYS.revokedStatus)) {
-                if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-                else showRegistrationModal(true);
-            } else showRegistrationModal(false);
-        }
-    }
 
-    function assertChronologicalIntegrity() {
-        const now = Date.now();
-        const lastRecordedTimeline = parseInt(localStorage.getItem(KEYS.timeline), 10);
-        if (lastRecordedTimeline && now < lastRecordedTimeline) {
-            window.storeSystemTelemetry("CRITICAL_TAMPER", "Clock skew backdate detected.", 1);
-            _doLockdown("Application Execution Suspended: Core Clock Tampering Detected.");
-            return false;
-        }
-        localStorage.setItem(KEYS.timeline, now.toString());
-        return true;
-    }
-
-    function executeLockdownScreen(displayMessage) { _doLockdown(displayMessage); }
-
-    function _doLockdown(displayMessage) {
-        if (!document.body) { document.addEventListener('DOMContentLoaded', () => _doLockdown(displayMessage)); return; }
-        document.body.style.opacity = '1';
-        document.body.style.pointerEvents = 'auto';
-        document.body.innerHTML = `<div style="font-family:sans-serif; text-align:center; padding:100px; background:#0f172a; color:#f8fafc; height:100vh; margin:0;"><div style="max-width:500px; margin:0 auto; border:1px solid #334155; padding:40px; border-radius:8px; background:#1e293b;"><h2 style="color:#ef4444; margin-top:0;">CADEN Governance Lockdown</h2><p style="font-size:15px; line-height:1.6; color:#cbd5e1;">${displayMessage}</p><div style="margin-top:25px; font-size:12px; color:#64748b;">Device ID: ${generateDeviceFingerprint()} | Script v${CADEN_VERSION}</div></div></div>`;
-        injectCADENBadge();
-    }
-
-    function runSecurityGovernanceEvaluation() {
-        if (!assertChronologicalIntegrity()) return false;
-        if (localStorage.getItem(KEYS.revokedStatus) === 'true') {
-            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-            else showRegistrationModal(true);
-            return false;
-        }
-        const activeToken = localStorage.getItem(KEYS.token);
-        const initialActivationRecord = localStorage.getItem(KEYS.genesis);
-        const serverTrialDays = localStorage.getItem(KEYS.serverTrialDays);
-        if (serverTrialDays) CADEN_CONFIG.trialDays = parseInt(serverTrialDays);
-        if (activeToken) {
-            try {
-                const payloadObject = JSON.parse(atob(activeToken.split('.')[1]));
-                if (payloadObject.exp * 1000 < Date.now()) { handleTrialExpiry(); return false; }
-                if (payloadObject.devId !== generateDeviceFingerprint()) { executeLockdownScreen("Hardware mismatch."); return false; }
-                if (!navigator.onLine) revealApp(); 
-                return true; 
-            } catch (e) { executeLockdownScreen("Token error."); return false; }
-        }
-        if (initialActivationRecord) {
-            try {
-                const parsedRecord = JSON.parse(initialActivationRecord);
-                const absoluteTrialLimit = parsedRecord.genesisEpoch + (CADEN_CONFIG.trialDays * 24 * 60 * 60 * 1000);
-                if (Date.now() > absoluteTrialLimit) { handleTrialExpiry(); return false; }
-                else { if (!navigator.onLine) revealApp(); } 
-            } catch (jsonErr) { executeLockdownScreen("Trial error."); return false; }
-        }
-        return true;
-    }
-
-    async function handleTrialExpiry() {
-        if (navigator.onLine) {
-            await autoActivate();
-            const newToken = localStorage.getItem(KEYS.token);
-            if (newToken) {
-                try { const exp = JSON.parse(atob(newToken.split('.')[1])).exp; if (exp * 1000 > Date.now()) { revealApp(); return; } } catch(e) {}
+            // Sync owner info from server
+            if (data.owner_name) {
+                const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                currentInfo.name = data.owner_name;
+                localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
             }
-            executeLockdownScreen("Trial expired. Please contact the administrator to extend your license.");
-        } else executeLockdownScreen(`Trial expired. Please connect to the internet to activate your license.`);
+
+            if (data.token) {
+                localStorage.setItem(KEYS.token, data.token);
+            }
+
+            // Silently handle fingerprint mismatch (no lockdown)
+            // Just ensure we have a valid token and let the app run.
+            revealApp();
+
+        } catch (e) {
+            console.error("CADEN activation error:", e);
+            // Fail open: if we have a local token, let them in
+            if (token) revealApp();
+        }
     }
 
-    function injectCADENBadge() {
-        if (document.getElementById('caden-badge')) return;
+    // --- INITIALIZATION ---
+    function init() {
+        // Inject Badge
         const badge = document.createElement('div');
-        badge.id = 'caden-badge';
-        badge.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999; opacity: 0.7; transition: opacity 0.3s;';
-        const fullId = generateDeviceFingerprint();
-        const parts = fullId.split('-');
-        const shortId = parts.length >= 3 ? `${parts[1]}-${parts[2]}` : fullId;
-        badge.innerHTML = `<div style="background: rgba(30, 41, 59, 0.9); border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer;" onmouseover="this.parentElement.style.opacity='1'" onmouseout="this.parentElement.style.opacity='0.7'"><div style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 100 100" style="flex-shrink: 0;"><path d="M50 5 L90 20 L90 55 C90 80 50 95 50 95 C50 95 10 80 10 55 L10 20 Z" fill="#1D4ED8"/><path d="M50 5 L10 20 L10 55 C10 80 50 95 50 95 Z" fill="#2563EB"/><circle cx="50" cy="38" r="10" fill="none" stroke="#FBBF24" stroke-width="4"/><line x1="50" y1="48" x2="50" y2="78" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="65" x2="62" y2="65" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="73" x2="58" y2="73" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/></svg><span style="color: #94a3b8; font-size: 11px; font-family: sans-serif; font-weight: bold;">Protected by CADEN</span></div><div style="color: #64748b; font-size: 9px; font-family: monospace; margin-left: 24px;">ID: ${shortId}</div></div>`;
+        badge.style.cssText = 'position:fixed;top:10px;right:10px;background:#1e293b;color:#fff;padding:5px 10px;border-radius:4px;font-size:10px;z-index:999999;font-family:sans-serif;';
+        badge.innerHTML = `🛡️ Protected by CADEN<br>ID: ${generateDeviceFingerprint()}`;
         document.body.appendChild(badge);
-    }
 
-    function spawnStealthConnectivityBroker() {
-        if (!navigator.onLine) return;
-        setInterval(dischargeBufferedTelemetry, 10000);
-        try {
-            const socketConnection = new WebSocket(`${CADEN_CONFIG.wssUrl}?app=${CADEN_CONFIG.appId}&dev=${generateDeviceFingerprint()}`);
-            socketConnection.onmessage = function(event) {
-                try {
-                    const serverMessage = JSON.parse(event.data);
-                    if (serverMessage.directive === "REVOKE_IMMEDIATE") { localStorage.setItem(KEYS.revokedStatus, 'true'); localStorage.removeItem(KEYS.token); executeLockdownScreen("Device revoked."); }
-                    if (serverMessage.directive === "UPDATE_TOKEN") { localStorage.removeItem(KEYS.token); autoActivate(); }
-                } catch(err) {}
-            };
-            socketConnection.onclose = () => setTimeout(spawnStealthConnectivityBroker, 5000);
-        } catch(e) {}
-    }
+        const token = localStorage.getItem(KEYS.token);
+        const hasGenesis = localStorage.getItem(KEYS.genesis);
+        const hasUserInfo = localStorage.getItem(KEYS.userInfo);
 
-    document.addEventListener("DOMContentLoaded", function() {
-        if (document.body) { document.body.style.opacity = '0'; document.body.style.pointerEvents = 'none'; }
-        injectCADENBadge();
-        if (localStorage.getItem(KEYS.revokedStatus) === 'true') {
-            if (localStorage.getItem(KEYS.appealStatus) === 'PENDING') _doLockdown("Appeal submitted. Awaiting administrator approval. Please close this application.");
-            else showRegistrationModal(true);
-            return; 
+        if (!token && !hasGenesis && !hasUserInfo) {
+            showRegistrationModal(false);
+        } else {
+            autoActivate();
         }
-        const canContinue = runSecurityGovernanceEvaluation();
-        if (!canContinue) return;
-        if (!localStorage.getItem(KEYS.genesis) && !localStorage.getItem(KEYS.userInfo)) { showRegistrationModal(false); return; }
-        window.addEventListener('online', () => { spawnStealthConnectivityBroker(); autoActivate(); });
-        setTimeout(spawnStealthConnectivityBroker, 2000);
-        window.logCadenOperation("APP_START", `RCM Dashboard initialized (CADEN v${CADEN_VERSION})`);
-        if (navigator.onLine) autoActivate(); 
-        else if (localStorage.getItem(KEYS.token) || localStorage.getItem(KEYS.genesis)) revealApp(); 
-        else showRegistrationModal(false);
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Global hooks for RCM App
+    window.storeSystemTelemetry = function(type, payload, level) { console.log('CADEN Telemetry:', type, payload); };
+    window.logCadenOperation = function(type, msg) { console.log('CADEN Log:', type, msg); };
+
 })();
 </script>
-<!-- END CADEN LICENSING & GOVERNANCE COMPONENT -->
+<!-- END CADEN LICENSING -->
 </head>
 <body>
-    <header>
-        <div class="brand">
-            <svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;">
-                <rect width="100" height="100" rx="20" fill="#0F172A"/>
-                <path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/>
-                <circle cx="50" cy="50" r="12" fill="none" stroke="#10B981" stroke-width="4"/>
-                <path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
-            </svg>
-            <h1>RCM Reliability Dashboard</h1>
-            <span class="version-badge">v0.7.10</span>
-        </div>
-    </header>
-    
-    <div> </div>
-    </div>
+<header>
+<div class="brand">
+<svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;"><rect width="100" height="100" rx="20" fill="#0F172A"/><path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/><circle cx="50" cy="50" r="12" fill="none" stroke="#10B981" stroke-width="4"/><path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/></svg>
+<h1>RCM Reliability Dashboard</h1>
+<span class="version-badge">v0.9.10</span>
+</div>
+</header>
 
-    <div id="app-container">
-        <div id="view-diagram" class="view active">
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                    <h2 style="margin:0;">System Overview</h2>
-                    <div class="log-controls"><div class="log-controls-group">
-                        <button class="btn btn-success" onclick="exportSystemLog()" style="font-size:.9rem;">Export System Log</button>
-                        <button class="btn" onclick="document.getElementById('import-system-log-input').click()" style="font-size:.9rem;">Import System Log</button>
-                        <input type="file" id="import-system-log-input" accept=".json" style="display:none;" onchange="importSystemLog(event)">
-                        <button class="btn" style="background:#c0392b;font-size:.9rem;" onclick="clearAllMaintenance()">Clear All Maintenance</button>
-                    </div></div>
-                </div>
-                <p>Click on a component (ESDV-101, V-101, etc.) to view its failure modes.</p>
-                <div id="diagram-wrapper">
-                    <img src="diagram.jpg" alt="System Diagram" id="diagram-image">
-                    <svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">
-                      <rect id="ESDV-101" class="clickable-area" x="200" y="250" width="110" height="80"/>
-                      <rect id="V-101" class="clickable-area" x="340" y="230" width="130" height="110"/>
-                      <rect id="PSV-101" class="clickable-area" x="520" y="10" width="100" height="80"/>
-                      <rect id="PT-101" class="clickable-area" x="680" y="130" width="100" height="70"/>
-                      <rect id="PIC-101" class="clickable-area" x="850" y="130" width="100" height="70"/>
-                      <rect id="PCV-101" class="clickable-area" x="990" y="130" width="110" height="80"/>
-                      <rect id="PI-101" class="clickable-area" x="680" y="370" width="90" height="80"/>
-                      <rect id="P-101" class="clickable-area" x="840" y="370" width="120" height="80"/>
-                      <rect id="NRV-101" class="clickable-area" x="990" y="370" width="110" height="80"/>
-                      <rect id="GT-101" class="clickable-area" x="340" y="500" width="130" height="90"/>
-                      <rect id="K-101" class="clickable-area" x="650" y="490" width="160" height="80"/>
-                    </svg>
-                </div>
-            </div>
-        </div>
+<div id="app-container">
+<div id="view-diagram" class="view active">
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+<h2 style="margin:0;">System Overview</h2>
+<div class="log-controls"><div class="log-controls-group">
+<button class="btn btn-success" onclick="exportSystemLog()" style="font-size:.9rem;">Export System Log</button>
+<button class="btn" onclick="document.getElementById('import-system-log-input').click()" style="font-size:.9rem;">Import System Log</button>
+<input type="file" id="import-system-log-input" accept=".json" style="display:none;" onchange="importSystemLog(event)">
+<button class="btn" style="background:#c0392b;font-size:.9rem;" onclick="clearAllMaintenance()">Clear All Maintenance</button>
+</div></div>
+</div>
+<p>Click on a component (ESDV-101, V-101, etc.) to view its failure modes.</p>
+<div id="diagram-wrapper">
+<img src="diagram.jpg" alt="System Diagram" id="diagram-image">
+<svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">
+<rect id="ESDV-101" class="clickable-area" x="200" y="250" width="110" height="80"/>
+<rect id="V-101" class="clickable-area" x="340" y="230" width="130" height="110"/>
+<rect id="PSV-101" class="clickable-area" x="520" y="10" width="100" height="80"/>
+<rect id="PT-101" class="clickable-area" x="680" y="130" width="100" height="70"/>
+<rect id="PIC-101" class="clickable-area" x="850" y="130" width="100" height="70"/>
+<rect id="PCV-101" class="clickable-area" x="990" y="130" width="110" height="80"/>
+<rect id="PI-101" class="clickable-area" x="680" y="370" width="90" height="80"/>
+<rect id="P-101" class="clickable-area" x="840" y="370" width="120" height="80"/>
+<rect id="NRV-101" class="clickable-area" x="990" y="370" width="110" height="80"/>
+<rect id="GT-101" class="clickable-area" x="340" y="500" width="130" height="90"/>
+<rect id="K-101" class="clickable-area" x="650" y="490" width="160" height="80"/>
+</svg>
+</div>
+</div>
+</div>
 
-        <div id="view-table" class="view">
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                    <button class="btn btn-secondary" onclick="switchView('diagram')">Back to Diagram</button>
-                    <div class="log-controls"><div class="log-controls-group">
-                        <button class="btn btn-success" onclick="exportComponentLog()" style="font-size:.9rem;">Export Component Log</button>
-                        <button class="btn" onclick="document.getElementById('import-comp-log-input').click()" style="font-size:.9rem;">Import Component Log</button>
-                        <input type="file" id="import-comp-log-input" accept=".json" style="display:none;" onchange="importComponentLog(event)">
-                        <button class="btn" style="background:#c0392b;font-size:.9rem;" onclick="clearComponentMaintenance()">Clear Component Maintenance</button>
-                    </div></div>
-                </div>
-                <h2 id="table-title">Component Failure Modes</h2>
-                <div style="overflow-x:auto;">
-                    <table id="fm-table"><thead><tr>
-                        <th style="text-align:right">No</th><th>Failure Mode</th><th>Cause</th><th>Category</th>
-                        <th>Target R(t)</th><th>Task List</th><th>MTBF (Days)</th>
-                        <th>Last Maintenance Date</th><th>Status</th>
-                    </tr></thead><tbody></tbody></table>
-                </div>
-            </div>
-        </div>
+<div id="view-table" class="view">
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+<button class="btn btn-secondary" onclick="switchView('diagram')">Back to Diagram</button>
+<div class="log-controls"><div class="log-controls-group">
+<button class="btn btn-success" onclick="exportComponentLog()" style="font-size:.9rem;">Export Component Log</button>
+<button class="btn" onclick="document.getElementById('import-comp-log-input').click()" style="font-size:.9rem;">Import Component Log</button>
+<input type="file" id="import-comp-log-input" accept=".json" style="display:none;" onchange="importComponentLog(event)">
+<button class="btn" style="background:#c0392b;font-size:.9rem;" onclick="clearComponentMaintenance()">Clear Component Maintenance</button>
+</div></div>
+</div>
+<h2 id="table-title">Component Failure Modes</h2>
+<div style="overflow-x:auto;">
+<table id="fm-table"><thead><tr>
+<th style="text-align:right">No</th><th>Failure Mode</th><th>Cause</th><th>Category</th>
+<th>Target R(t)</th><th>Task List</th><th>MTBF (Days)</th>
+<th>Last Maintenance Date</th><th>Status</th>
+</tr></thead><tbody></tbody></table>
+</div>
+</div>
+</div>
 
-        <div id="view-charts" class="view">
-            <div class="card">
-                <button class="btn btn-secondary" onclick="switchView('table')">Back to Table</button>
-                <div id="chart-fm-details" class="fm-details"></div>
-                <h2 id="chart-title">Reliability & Failure Rate</h2>
-                <div class="charts-grid">
-                    <div class="chart-box"><div class="chart-canvas-wrap"><canvas id="chart-reliability"></canvas></div><div id="reliability-legend" class="chart-legend"></div></div>
-                    <div class="chart-box"><div class="chart-canvas-wrap"><canvas id="chart-failurerate"></canvas></div></div>
-                </div>
-            </div>
-        </div>
+<div id="view-charts" class="view">
+<div class="card" style="background:transparent;box-shadow:none;padding:0;">
+<div class="level2-toolbar">
+<div class="toolbar-left"><button class="btn btn-secondary" onclick="switchView('table')">Back to Table</button></div>
+<h2 class="fm-title" id="fm-page-title" style="flex:1;text-align:center;margin:0;"></h2>
+<div class="toolbar-right"><button class="btn btn-secondary" id="reset-layout-btn" onclick="resetQuadrantLayout()">Reset Layout</button></div>
+</div>
+<div class="quadrants-grid" id="quad-grid">
+<div class="quad q1"><h3>Details</h3><div id="chart-fm-details"></div></div>
+<div class="quad q2"><div class="equip-wrap"><img id="equip-img" alt="Equipment"></div></div>
+<div class="quad q3">
+<div class="chart-box">
+<button class="zoom-btn" onclick="openChartZoom('reliability')" title="Zoom chart">🔍</button>
+<div class="chart-canvas-wrap"><canvas id="chart-reliability"></canvas></div>
+<div id="reliability-legend" class="chart-legend"></div>
+</div>
+</div>
+<div class="quad q4">
+<div class="chart-box">
+<button class="zoom-btn" onclick="openChartZoom('failurerate')" title="Zoom chart">🔍</button>
+<div class="chart-canvas-wrap"><canvas id="chart-failurerate"></canvas></div>
+</div>
+</div>
+</div>
+</div>
+</div>
 
-        <div class="slider-container" id="global-slider" style="display:none;">
-            <label for="day-slider">Current Day:</label>
-            <input type="range" id="day-slider" min="1" max="365" value="1">
-            <div class="day-display">Day: <span id="day-value">1</span></div>
-            <div class="slider-note" id="slider-note">Move the slider to view each Failure Mode status for this component.</div>
-        </div>
-    </div>
+<div class="slider-container" id="global-slider" style="display:none;">
+<label for="day-slider">Current Day:</label>
+<input type="range" id="day-slider" min="1" max="365" value="1">
+<div class="day-display">Day: <span id="day-value">1</span></div>
+<div class="slider-note" id="slider-note">Move the slider to view each Failure Mode status for this component.</div>
+</div>
+</div>
 
-    <footer>
-        <div class="footer-left">User: <span id="footer-user-name">—</span></div>
-        <div class="footer-center"><div id="branding-copyright"></div><div id="branding-powered"></div></div>
-        <div class="footer-right">License Expires: <span id="footer-license-expiry">—</span></div>
-    </footer>
+<footer>
+<div class="footer-left">User: <span id="footer-user-name">—</span></div>
+<div class="footer-center"><div id="branding-copyright"></div><div id="branding-powered"></div></div>
+<div class="footer-right">License Expires: <span id="footer-license-expiry">—</span></div>
+</footer>
 
-    <div id="calibration-controls">
-        <h3>SVG Calibration</h3>
-        <label>Select Component:</label><select id="calib-select"></select>
-        <label>X: <input type="number" id="calib-x" step="10"></label>
-        <label>Y: <input type="number" id="calib-y" step="10"></label>
-        <label>Width: <input type="number" id="calib-w" step="10"></label>
-        <label>Height: <input type="number" id="calib-h" step="10"></label>
-        <button class="btn" onclick="exportCalibration()" style="margin-top:10px;width:100%;">Export SVG Code</button>
-        <textarea id="calib-output" style="width:100%;height:100px;margin-top:10px;font-size:.8rem;"></textarea>
-    </div>
+<div id="lightbox"><img alt="Zoom"></div>
 
-    <script>
-        const EMBEDDED_DATA = null;
-        const EMBEDDED_PWD_B64 = "";
-        const EMBEDDED_BRAND_C_B64 = "";
-        const EMBEDDED_BRAND_P_B64 = "";
-        let appData=null, currentDay=1, currentComponentId=null, currentFailureModeIndex=null;
-        let chartRel=null, chartFR=null, maintenanceLog={};
+<div id="chart-zoom-modal">
+<div class="zoom-content">
+<button class="zoom-close" onclick="closeChartZoom()">&times;</button>
+<div class="zoom-chart-wrap"><canvas id="zoom-chart-canvas"></canvas></div><div id="zoom-legend" class="chart-legend" style="background:#000;padding:10px;"></div>
+<div class="zoom-slider-wrap">
+<label>Current Day:</label>
+<input type="range" id="zoom-day-slider" min="1" max="365" value="1">
+<div class="day-display">Day: <span id="zoom-day-value">1</span></div>
+</div>
+</div>
+</div>
 
-        function setDataStatus(l){const e=document.getElementById('data-status');if(!e)return;e.innerText=l?"Data: Loaded":"Data: Not Loaded";}
-        function loadMaintenanceLog(){const s=localStorage.getItem('rcm_maintenance_log');if(s){try{maintenanceLog=JSON.parse(s);}catch(e){}}}
-        function saveMaintenanceLog(){localStorage.setItem('rcm_maintenance_log',JSON.stringify(maintenanceLog));}
-        function download(name,obj){const u="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(obj,null,2));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();}
-        function exportSystemLog(){download("system_maintenance_log.json",maintenanceLog);alert("System Log exported!");}
-        function importSystemLog(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{maintenanceLog=JSON.parse(e.target.result);saveMaintenanceLog();alert("System Log imported!");updateDiagramColors();}catch(x){alert("Error: "+x.message);}};r.readAsText(f);ev.target.value='';}
-        function exportComponentLog(){download("component_log_"+currentComponentId+".json",maintenanceLog[currentComponentId]||{});alert("Component Log exported!");}
-        function importComponentLog(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{let d=JSON.parse(e.target.result);if(d[currentComponentId]&&typeof d[currentComponentId]==='object')d=d[currentComponentId];if(!maintenanceLog[currentComponentId])maintenanceLog[currentComponentId]={};for(const[k,v]of Object.entries(d)){if(typeof v==='string')maintenanceLog[currentComponentId][k]=v;}saveMaintenanceLog();alert("Component Log imported!");renderTable(currentComponentId);updateDiagramColors();}catch(x){alert("Error: "+x.message);}};r.readAsText(f);ev.target.value='';}
-        function getDaysOffset(ds){if(!ds)return 0;const a=new Date(ds),t=new Date();a.setHours(0,0,0,0);t.setHours(0,0,0,0);const d=Math.ceil((t-a)/86400000);return d>0?d:0;}
-        function getEffectiveDay(s,c,i){const n=appData.components[c].failureModes[i].name;const d=maintenanceLog[c]?maintenanceLog[c][n]:null;return s+getDaysOffset(d);}
+<div id="intro-overlay">
+<video id="intro-video" src="intro.mp4" playsinline muted></video>
+<button id="start-btn">Click to Start Intro</button>
+<button id="skip-btn">Skip Intro</button>
+</div>
 
-        function clearAllMaintenance(){
-            if(!appData){alert('No data loaded.');return;}
-            if(confirm('This erases ALL Last Maintenance dates for ALL components. Continue?')){
-                maintenanceLog={};saveMaintenanceLog();updateDiagramColors();
-                if(document.getElementById('view-table').classList.contains('active') && currentComponentId) renderTable(currentComponentId);
-                alert('All maintenance data cleared.');
-            }
-        }
-        function clearComponentMaintenance(){
-            if(!currentComponentId){alert('No component selected.');return;}
-            if(confirm('This erases ALL Last Maintenance dates for '+currentComponentId+'. Continue?')){
-                if(maintenanceLog) delete maintenanceLog[currentComponentId];
-                saveMaintenanceLog();updateDiagramColors();renderTable(currentComponentId);
-                alert('Maintenance data for '+currentComponentId+' cleared.');
-            }
-        }
+<div id="calibration-controls">
+<h3>SVG Calibration</h3>
+<label>Select Component:</label><select id="calib-select"></select>
+<label>X: <input type="number" id="calib-x" step="10"></label>
+<label>Y: <input type="number" id="calib-y" step="10"></label>
+<label>Width: <input type="number" id="calib-w" step="10"></label>
+<label>Height: <input type="number" id="calib-h" step="10"></label>
+<button class="btn" onclick="exportCalibration()" style="margin-top:10px;width:100%;">Export SVG Code</button>
+<textarea id="calib-output" style="width:100%;height:100px;margin-top:10px;font-size:.8rem;"></textarea>
+</div>
 
-        document.addEventListener('DOMContentLoaded',()=>{
-            document.addEventListener('keydown',function(ev){if((ev.ctrlKey||ev.metaKey)&&ev.shiftKey&&(ev.key==='L'||ev.key==='l')){ev.preventDefault();ev.stopPropagation();toggleCalibration();}});
-            loadMaintenanceLog();
-            if(EMBEDDED_BRAND_C_B64)document.getElementById('branding-copyright').innerHTML=atob(EMBEDDED_BRAND_C_B64);
-            if(EMBEDDED_BRAND_P_B64)document.getElementById('branding-powered').innerHTML=atob(EMBEDDED_BRAND_P_B64);
-            
-            if (typeof EMBEDDED_DATA !== 'undefined' && EMBEDDED_DATA) {
-                try {
-                    const pwd = atob(EMBEDDED_PWD_B64);
-                    const bytes = CryptoJS.AES.decrypt(EMBEDDED_DATA, pwd);
-                    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
-                    if (decryptedString) {
-                        appData = JSON.parse(decryptedString);
-                        document.getElementById('day-slider').max = appData.maxDays || 365;
-                        document.getElementById('global-slider').style.display = 'flex';
-                        setDataStatus(true);
-                        updateDiagramColors();
-                    }
-                } catch (err) { console.error("Auto-load failed:", err); }
-                const modal = document.getElementById('login-modal');
-                if (modal) modal.remove();
-            }
+<script>
+const EMBEDDED_DATA=null;const EMBEDDED_PWD_B64="";const EMBEDDED_BRAND_C_B64="";const EMBEDDED_BRAND_P_B64="";
+let appData=null,currentDay=1,currentComponentId=null,currentFailureModeIndex=null;
+let chartRel=null,chartFR=null,chartZoom=null,maintenanceLog={};
 
-            document.querySelectorAll('.clickable-area').forEach(el=>el.addEventListener('click',e=>{if(document.body.classList.contains('calibration-mode'))return;const id=e.target.id;if(appData&&appData.components[id]){currentComponentId=id;renderTable(id);switchView('table');}else if(!appData)alert("Data is not loaded.");else alert("No data for "+id);}));
-            document.getElementById('day-slider').addEventListener('input',e=>{
-                currentDay=parseInt(e.target.value);
-                document.getElementById('day-value').innerText=currentDay;
-                try{ updateCurrentDayLines(); }catch(err){}
-                updateDiagramColors();
-                updateUI();
-            });
-            const cs=document.getElementById('calib-select');document.querySelectorAll('.clickable-area').forEach(el=>{const o=document.createElement('option');o.value=el.id;o.text=el.id;cs.appendChild(o);});
-            cs.addEventListener('change',updateCalibrationInputs);['calib-x','calib-y','calib-w','calib-h'].forEach(id=>document.getElementById(id).addEventListener('change',applyCalibration));updateCalibrationInputs();
-        });
+function loadMaintenanceLog(){const s=localStorage.getItem('rcm_maintenance_log');if(s){try{maintenanceLog=JSON.parse(s);}catch(e){}}}
+function saveMaintenanceLog(){localStorage.setItem('rcm_maintenance_log',JSON.stringify(maintenanceLog));}
+function download(name,obj){const u="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(obj,null,2));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function exportSystemLog(){download("system_maintenance_log.json",maintenanceLog);alert("System Log exported!");}
+function importSystemLog(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{maintenanceLog=JSON.parse(e.target.result);saveMaintenanceLog();alert("System Log imported!");updateDiagramColors();}catch(x){alert("Error: "+x.message);}};r.readAsText(f);ev.target.value='';}
+function exportComponentLog(){download("component_log_"+currentComponentId+".json",maintenanceLog[currentComponentId]||{});alert("Component Log exported!");}
+function importComponentLog(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{let d=JSON.parse(e.target.result);if(d[currentComponentId]&&typeof d[currentComponentId]==='object')d=d[currentComponentId];if(!maintenanceLog[currentComponentId])maintenanceLog[currentComponentId]={};for(const[k,v]of Object.entries(d)){if(typeof v==='string')maintenanceLog[currentComponentId][k]=v;}saveMaintenanceLog();alert("Component Log imported!");renderTable(currentComponentId);updateDiagramColors();}catch(x){alert("Error: "+x.message);}};r.readAsText(f);ev.target.value='';}
+function getDaysOffset(ds){if(!ds)return 0;const a=new Date(ds),t=new Date();a.setHours(0,0,0,0);t.setHours(0,0,0,0);const d=Math.ceil((t-a)/86400000);return d>0?d:0;}
+function getEffectiveDay(s,c,i){const n=appData.components[c].failureModes[i].name;const d=maintenanceLog[c]?maintenanceLog[c][n]:null;return s+getDaysOffset(d);}
+function clearAllMaintenance(){if(!appData){alert('No data loaded.');return;}if(confirm('Erase ALL Last Maintenance dates for ALL components?')){maintenanceLog={};saveMaintenanceLog();updateDiagramColors();if(document.getElementById('view-table').classList.contains('active')&&currentComponentId)renderTable(currentComponentId);alert('All maintenance data cleared.');}}
+function clearComponentMaintenance(){if(!currentComponentId){alert('No component selected.');return;}if(confirm('Erase ALL Last Maintenance dates for '+currentComponentId+'?')){if(maintenanceLog)delete maintenanceLog[currentComponentId];saveMaintenanceLog();updateDiagramColors();renderTable(currentComponentId);alert('Maintenance data for '+currentComponentId+' cleared.');}}
 
-        function toggleCalibration(){document.body.classList.toggle('calibration-mode');}
-        function updateCalibrationInputs(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);document.getElementById('calib-x').value=el.getAttribute('x');document.getElementById('calib-y').value=el.getAttribute('y');document.getElementById('calib-w').value=el.getAttribute('width');document.getElementById('calib-h').value=el.getAttribute('height');}
-        function applyCalibration(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);el.setAttribute('x',document.getElementById('calib-x').value);el.setAttribute('y',document.getElementById('calib-y').value);el.setAttribute('width',document.getElementById('calib-w').value);el.setAttribute('height',document.getElementById('calib-h').value);}
-        function exportCalibration(){let s='<svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">\n';document.querySelectorAll('.clickable-area').forEach(el=>{s+='  <rect id="'+el.id+'" class="clickable-area" x="'+el.getAttribute('x')+'" y="'+el.getAttribute('y')+'" width="'+el.getAttribute('width')+'" height="'+el.getAttribute('height')+'" />\n';});s+='</svg>';document.getElementById('calib-output').value=s;}
-        
-        function switchView(v){
-            document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-            document.getElementById('view-'+v).classList.add('active');
-            const note = document.getElementById('slider-note');
-            if(note) note.style.display = (v === 'charts') ? 'none' : 'block';
-            if(v==='diagram'){currentComponentId=null;updateDiagramColors();}
-            else if(v==='table')renderTable(currentComponentId);
-            else if(v==='charts')renderCharts();
-        }
-        function getStatusColor(d,t){if(!t)return'green';if(d<=t.yellow)return'green';if(d<=t.red)return'yellow';return'red';}
-        function getComponentStatus(c){const comp=appData.components[c];let w='green';const p={green:1,yellow:2,red:3};comp.failureModes.forEach((fm,i)=>{const s=getStatusColor(getEffectiveDay(currentDay,c,i),fm.thresholds);if(p[s]>p[w])w=s;});return w;}
-        function updateDiagramColors(){if(!appData)return;Object.keys(appData.components).forEach(c=>{const el=document.getElementById(c);if(el){el.classList.remove('comp-green','comp-yellow','comp-red');el.classList.add('comp-'+getComponentStatus(c));}});}
-        function handleDateChange(c,i,ds){const n=appData.components[c].failureModes[i].name;if(!maintenanceLog[c])maintenanceLog[c]={};if(ds)maintenanceLog[c][n]=ds;else delete maintenanceLog[c][n];saveMaintenanceLog();updateDiagramColors();if(document.getElementById('view-table').classList.contains('active')){const row=document.querySelector('tr[data-fm-index="'+i+'"]');if(row){const s=getStatusColor(getEffectiveDay(currentDay,c,i),appData.components[c].failureModes[i].thresholds);const sc=row.querySelector('.status-cell');sc.className='status-cell status-'+s;sc.innerText=s.toUpperCase();}}if(document.getElementById('view-charts').classList.contains('active'))updateCurrentDayLines();}
-        
-        function renderTable(c){
-            const comp=appData.components[c];
-            document.getElementById('table-title').innerText='Failure Modes: '+c;
-            const tb=document.querySelector('#fm-table tbody');tb.innerHTML='';
-            comp.failureModes.forEach((fm,i)=>{
-                const ed=getEffectiveDay(currentDay,c,i),st=getStatusColor(ed,fm.thresholds),sd=maintenanceLog[c]?maintenanceLog[c][fm.name]:'';
-                let seqNum = (i + 1).toString();
-                let actualDataIcon = (fm.actualData && fm.actualData.length > 0) ? '<span style="color: #3498db; font-size: 1.2rem; line-height: 1; vertical-align: middle; margin-right: 4px;" title="Contains actual failure data">●</span>' : '';
-                const tr=document.createElement('tr');tr.setAttribute('data-fm-index',i);
-                tr.innerHTML='<td style="text-align:right">' + actualDataIcon + seqNum + '</td><td>'+fm.name+'</td><td>'+fm.cause+'</td><td>'+fm.category+'</td><td>'+fm.targetRt+'%</td><td>'+fm.taskList+'</td><td>'+fm.mtbfDays.toFixed(1)+'</td><td><input type="date" class="maint-date-input" value="'+sd+'"></td><td class="status-cell status-'+st+'">'+st.toUpperCase()+'</td>';
-                tr.querySelector('.maint-date-input').addEventListener('change',e=>handleDateChange(c,i,e.target.value));
-                tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){currentFailureModeIndex=i;switchView('charts');}});
-                tb.appendChild(tr);
-            });
-        }
+document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('keydown',function(ev){if((ev.ctrlKey||ev.metaKey)&&ev.shiftKey&&(ev.key==='L'||ev.key==='l')){ev.preventDefault();ev.stopPropagation();toggleCalibration();}});
+loadMaintenanceLog();
+if(EMBEDDED_BRAND_C_B64)document.getElementById('branding-copyright').innerHTML=atob(EMBEDDED_BRAND_C_B64);
+if(EMBEDDED_BRAND_P_B64)document.getElementById('branding-powered').innerHTML=atob(EMBEDDED_BRAND_P_B64);
+document.querySelectorAll('.clickable-area').forEach(el=>el.addEventListener('click',e=>{if(document.body.classList.contains('calibration-mode'))return;const id=e.target.id;if(appData&&appData.components[id]){currentComponentId=id;renderTable(id);switchView('table');}else if(!appData)alert("Data is not loaded.");else alert("No data for "+id);}));
+document.getElementById('day-slider').addEventListener('input',e=>{currentDay=parseInt(e.target.value);document.getElementById('day-value').innerText=currentDay;syncZoomSlider();try{updateCurrentDayLines();}catch(err){}updateDiagramColors();updateUI();});
+const cs=document.getElementById('calib-select');document.querySelectorAll('.clickable-area').forEach(el=>{const o=document.createElement('option');o.value=el.id;o.text=el.id;cs.appendChild(o);});
+cs.addEventListener('change',updateCalibrationInputs);['calib-x','calib-y','calib-w','calib-h'].forEach(id=>document.getElementById(id).addEventListener('change',applyCalibration));updateCalibrationInputs();
+});
 
-        function getValueAtDay(days,vals,t){for(let i=0;i<days.length-1;i++){if(days[i]<=t&&days[i+1]>=t){const f=(t-days[i])/(days[i+1]-days[i]);return vals[i]+f*(vals[i+1]-vals[i]);}}return vals[vals.length-1];}
-        function renderCharts(){
-    const comp=appData.components[currentComponentId], fm=comp.failureModes[currentFailureModeIndex];
-    const hasActualData = fm.actualData && fm.actualData.length > 0;
-    
-    // Apply red border to Reliability chart if actual data exists
-    const relCanvas = document.getElementById('chart-reliability');
-    if(relCanvas) relCanvas.parentElement.classList.toggle('has-actual-data', hasActualData);
+function toggleCalibration(){document.body.classList.toggle('calibration-mode');}
+function updateCalibrationInputs(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);document.getElementById('calib-x').value=el.getAttribute('x');document.getElementById('calib-y').value=el.getAttribute('y');document.getElementById('calib-w').value=el.getAttribute('width');document.getElementById('calib-h').value=el.getAttribute('height');}
+function applyCalibration(){const id=document.getElementById('calib-select').value,el=document.getElementById(id);el.setAttribute('x',document.getElementById('calib-x').value);el.setAttribute('y',document.getElementById('calib-y').value);el.setAttribute('width',document.getElementById('calib-w').value);el.setAttribute('height',document.getElementById('calib-h').value);}
+function exportCalibration(){let s='<svg id="diagram-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 600" preserveAspectRatio="none">\n';document.querySelectorAll('.clickable-area').forEach(el=>{s+='  <rect id="'+el.id+'" class="clickable-area" x="'+el.getAttribute('x')+'" y="'+el.getAttribute('y')+'" width="'+el.getAttribute('width')+'" height="'+el.getAttribute('height')+'" />\n';});s+='</svg>';document.getElementById('calib-output').value=s;}
 
-    // Common Dark Theme Options
-    const darkTheme = {
-        responsive: true, maintainAspectRatio: false,
-        color: '#FFFFFF',
-        plugins: {
-            title: { display: true, text: fm.name, color: '#FFFFFF', font: { size: 16, weight: 'bold', family: "'Segoe UI', sans-serif" }, padding: {bottom: 20} },
-            legend: {
-                position: 'bottom',
-                labels: {
-                    color: '#FFFFFF',
-                    font: { size: 11, family: "'Segoe UI', sans-serif" },
-                    usePointStyle: false,
-                    boxWidth: 40,
-                    boxHeight: 12,
-                    padding: 14,
-                    generateLabels: function(chart) {
-                        var items = [];
-                        var datasets = chart.data.datasets;
-                        var styleMap = {
-                            'Reliability Curve': { type: 'line', color: '#00BFFF', dash: [], width: 2 },
-                            'Ongoing':           { type: 'line', color: '#FFFF00', dash: [6, 4], width: 2 },
-                            'Alarm':             { type: 'line', color: '#FF0000', dash: [6, 4], width: 3 },
-                            'Failure event':     { type: 'circle', color: '#FFFFFF', radius: 4 }
-                        };
-                        datasets.forEach(function(ds, idx) {
-                            if (styleMap[ds.label]) {
-                                var st = styleMap[ds.label];
-                                items.push({
-                                    text: ds.label,
-                                    fillStyle: st.type === 'circle' ? st.color : 'transparent',
-                                    strokeStyle: st.type === 'line' ? st.color : 'transparent',
-                                    lineWidth: st.type === 'line' ? st.width : 0,
-                                    lineDash: st.type === 'line' ? st.dash : [],
-                                    pointStyle: st.type === 'circle' ? 'circle' : 'line',
-                                    hidden: !chart.isDatasetVisible(idx),
-                                    datasetIndex: idx,
-                                    fontColor: '#FFFFFF'
-                                });
-                            }
-                        });
-                        return items;
-                    }
-                }
-            }
-        },
-        scales: {
-            x: { grid: { color: '#444444', lineWidth: 1 }, ticks: { color: '#FFFFFF', font: { size: 10 } }, title: { display: true, text: 'Next x days (hari)', color: '#FFFFFF', font: { size: 12, weight: 'bold' } } },
-            y: { grid: { color: '#444444', lineWidth: 1 }, ticks: { color: '#FFFFFF', font: { size: 10 } }, title: { display: true, text: 'R(t) - %', color: '#FFFFFF', font: { size: 12, weight: 'bold' } } }
-        }
-    };
+function switchView(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById('view-'+v).classList.add('active');const note=document.getElementById('slider-note');if(note)note.style.display=(v==='charts')?'none':'block';if(v==='diagram'){currentComponentId=null;updateDiagramColors();}else if(v==='table')renderTable(currentComponentId);else if(v==='charts'){renderCharts();if(window.positionHandles)setTimeout(window.positionHandles,100);}}
+function getStatusColor(d,t){if(!t)return'green';if(d<=t.yellow)return'green';if(d<=t.red)return'yellow';return'red';}
+function getComponentStatus(c){const comp=appData.components[c];let w='green';const p={green:1,yellow:2,red:3};comp.failureModes.forEach((fm,i)=>{const s=getStatusColor(getEffectiveDay(currentDay,c,i),fm.thresholds);if(p[s]>p[w])w=s;});return w;}
+function updateDiagramColors(){if(!appData)return;Object.keys(appData.components).forEach(c=>{const el=document.getElementById(c);if(el){el.classList.remove('comp-green','comp-yellow','comp-red');el.classList.add('comp-'+getComponentStatus(c));}});}
+function handleDateChange(c,i,ds){const n=appData.components[c].failureModes[i].name;if(!maintenanceLog[c])maintenanceLog[c]={};if(ds)maintenanceLog[c][n]=ds;else delete maintenanceLog[c][n];saveMaintenanceLog();updateDiagramColors();if(document.getElementById('view-table').classList.contains('active')){const row=document.querySelector('tr[data-fm-index="'+i+'"]');if(row){const s=getStatusColor(getEffectiveDay(currentDay,c,i),appData.components[c].failureModes[i].thresholds);const sc=row.querySelector('.status-cell');sc.className='status-cell status-'+s;sc.innerText=s.toUpperCase();}}if(document.getElementById('view-charts').classList.contains('active'))updateCurrentDayLines();}
+function renderTable(c){const comp=appData.components[c];document.getElementById('table-title').innerText='Failure Modes: '+c;const tb=document.querySelector('#fm-table tbody');tb.innerHTML='';comp.failureModes.forEach((fm,i)=>{const ed=getEffectiveDay(currentDay,c,i),st=getStatusColor(ed,fm.thresholds),sd=maintenanceLog[c]?maintenanceLog[c][fm.name]:'';let seqNum=(i+1).toString();let icon=(fm.actualData&&fm.actualData.length>0)?'<span style="color:#3498db;font-size:1.2rem;line-height:1;vertical-align:middle;margin-right:4px;" title="Contains actual failure data">\u25CF</span>':'';const tr=document.createElement('tr');tr.setAttribute('data-fm-index',i);tr.innerHTML='<td style="text-align:right">'+icon+seqNum+'</td><td>'+fm.name+'</td><td>'+fm.cause+'</td><td>'+fm.category+'</td><td>'+fm.targetRt+'%</td><td>'+fm.taskList+'</td><td>'+fm.mtbfDays.toFixed(1)+'</td><td><input type="date" class="maint-date-input" value="'+sd+'"></td><td class="status-cell status-'+st+'">'+st.toUpperCase()+'</td>';tr.querySelector('.maint-date-input').addEventListener('change',e=>handleDateChange(c,i,e.target.value));tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){currentFailureModeIndex=i;switchView('charts');}});tb.appendChild(tr);});}
+function getValueAtDay(days,vals,t){for(let i=0;i<days.length-1;i++){if(days[i]<=t&&days[i+1]>=t){const f=(t-days[i])/(days[i+1]-days[i]);return vals[i]+f*(vals[i+1]-vals[i]);}}return vals[vals.length-1];}
 
-    let targetRt=parseFloat(fm.targetRt)||99.0, targetDay=parseFloat(fm.targetDay);
-    const maxDays=Math.max(...fm.days);
-    const yMin=(fm.chartYMin!=null)?fm.chartYMin:0;
-    const xMaxRel=(fm.chartXMax!=null)?fm.chartXMax:maxDays;
-    
-    if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){
-        for(let i=0;i<fm.reliabilityData.length-1;i++){
-            if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){
-                const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);
-                targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;
-            }
-        }
-    }
-    const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
-    const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
-    const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
-    
-    if(chartRel)chartRel.destroy(); if(chartFR)chartFR.destroy();
+function renderCharts(){
+if(!appData||!currentComponentId||currentFailureModeIndex===null)return;
+const comp=appData.components[currentComponentId],fm=comp.failureModes[currentFailureModeIndex];
+const hasActualData=fm.actualData&&fm.actualData.length>0;
 
-    // Datasets
-    const reliabilityDatasets = [
-        { label: 'Reliability Curve', data: fm.days.map((d,i)=>({x:d,y:fm.reliabilityData[i]})), borderColor: '#00BFFF', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false },
-        { label: 'Ongoing', data: [{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}], borderColor: '#FFFF00', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, showLine: true, fill: false },
-        { label: 'Ongoing Marker', data: [{x:ed,y:cRel}], pointStyle: 'rectRot', pointBackgroundColor: '#FFFF00', pointRadius: 6, showLine: false },
-        { label: 'Alarm', data: [{x:1,y:targetRt},{x:targetDay,y:targetRt},{x:targetDay,y:0}], borderColor: '#FF0000', borderDash: [5, 5], borderWidth: 3, pointRadius: 0, showLine: true, fill: false },
-        { label: 'Alarm Marker', data: [{x:targetDay,y:targetRt}], pointStyle: 'crossRot', pointBackgroundColor: '#FF0000', pointBorderColor: '#FF0000', pointRadius: 8, showLine: false }
-    ];
-    
-    if(hasActualData) {
-        reliabilityDatasets.push({ label: 'Failure event', data: fm.actualData, backgroundColor: '#FFFFFF', pointRadius: 4, showLine: false });
-    }
+// FM page title (moved to toolbar)
+const pageTitle=document.getElementById('fm-page-title');
+if(pageTitle)pageTitle.innerText=fm.name;
 
-    chartRel = new Chart(relCanvas.getContext('2d'), {
-        type: 'line',
-        data: { datasets: reliabilityDatasets },
-        options: { ...darkTheme, plugins: { ...darkTheme.plugins, legend: { display: false } }, scales: { ...darkTheme.scales, x: { ...darkTheme.scales.x, type: 'logarithmic', min: 1, max: xMaxRel }, y: { ...darkTheme.scales.y, min: yMin, max: 105, title: { ...darkTheme.scales.y.title, text: 'R(t) - %' } } } }
-    });
+// Q1 Details
+var detailsEl=document.getElementById('chart-fm-details');
+if(detailsEl)detailsEl.innerHTML='<div style="font-size:.9rem;line-height:1.5;"><strong>Cause:</strong> '+(fm.cause||'N/A')+'<br><br><strong>Task List:</strong> '+(fm.taskList||'N/A')+'</div>';
 
-    const lg = document.getElementById('reliability-legend');
-    if (lg) {
-        lg.innerHTML = '<span class="lg-item"><span class="lg-line lg-blue"></span>Reliability Curve</span>' +
-                       '<span class="lg-item"><span class="lg-line lg-dash-y"></span>Ongoing</span>' +
-                       '<span class="lg-item"><span class="lg-line lg-dash-r"></span>Alarm</span>' +
-                       (hasActualData ? '<span class="lg-item"><span class="lg-circle"></span>Failure event</span>' : '');
-    }
+// Q2 Equipment (no title, full quadrant)
+var eqImg=document.getElementById('equip-img');
+if(eqImg){var ext=(currentComponentId==='ESDV-101'||currentComponentId==='GT-101')?'jpeg':'png';eqImg.src='equipments/'+currentComponentId+'.'+ext;eqImg.style.display='block';eqImg.onerror=function(){this.style.display='none';eqImg.parentElement.innerHTML='<span style="color:#999">No image available</span>';};}
 
-    // Failure Rate Chart (Linear X)
-    const frTheme = JSON.parse(JSON.stringify(darkTheme)); // Deep copy
-    frTheme.scales.y.title.text = 'Failure Rate';
-    frTheme.scales.x.title.text = 'Next x days (hari)';
-    
-    chartFR = new Chart(document.getElementById('chart-failurerate').getContext('2d'), {
-        type: 'line',
-        data: { datasets: [
-            { label: 'Failure Rate', data: fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})), borderColor: '#00BFFF', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false },
-            { label: 'Ongoing', data: [{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}], borderColor: '#FFFF00', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, showLine: true, fill: false },
-            { label: 'Ongoing Marker', data: [{x:ed,y:cFR}], pointStyle: 'rectRot', pointBackgroundColor: '#FFFF00', pointRadius: 6, showLine: false }
-        ]},
-        options: { ...frTheme, plugins: { ...frTheme.plugins, legend: { display: false } }, scales: { ...frTheme.scales, x: { ...frTheme.scales.x, type: 'linear', min: 0 }, y: { ...frTheme.scales.y, min: 0 } } }
-    });
+const relCanvas=document.getElementById('chart-reliability');
+if(relCanvas)relCanvas.closest('.chart-box').classList.toggle('has-actual-data',hasActualData);
+
+const darkTheme={responsive:true,maintainAspectRatio:false,color:'#FFFFFF',plugins:{title:{display:false},legend:{display:false}},scales:{x:{grid:{color:'#444444',lineWidth:1},ticks:{color:'#FFFFFF',font:{size:10}},title:{display:true,text:'Next x days (hari)',color:'#FFFFFF',font:{size:12,weight:'bold'},padding:{top:5}}},y:{grid:{color:'#444444',lineWidth:1},ticks:{color:'#FFFFFF',font:{size:10}},title:{display:true,text:'R(t) - %',color:'#FFFFFF',font:{size:12,weight:'bold'},padding:{bottom:5}}}}};
+
+let targetRt=parseFloat(fm.targetRt)||99.0,targetDay=parseFloat(fm.targetDay);
+const maxDays=Math.max(...fm.days);const yMin=(fm.chartYMin!=null)?fm.chartYMin:0;const xMaxRel=(fm.chartXMax!=null)?fm.chartXMax:maxDays;
+if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){for(let i=0;i<fm.reliabilityData.length-1;i++){if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;}}}
+const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
+const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
+const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+if(chartRel)chartRel.destroy();if(chartFR)chartFR.destroy();
+
+const rds=[
+{label:'Reliability Curve',data:fm.days.map((d,i)=>({x:d,y:fm.reliabilityData[i]})),borderColor:'#00BFFF',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
+{label:'Ongoing',data:[{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}],borderColor:'#FFFF00',borderDash:[5,5],borderWidth:1.5,pointRadius:0,showLine:true,fill:false},
+{label:'Ongoing Marker',data:[{x:ed,y:cRel}],pointStyle:'rectRot',pointBackgroundColor:'#FFFF00',pointRadius:6,showLine:false},
+{label:'Alarm',data:[{x:1,y:targetRt},{x:targetDay,y:targetRt},{x:targetDay,y:0}],borderColor:'#FF0000',borderDash:[5,5],borderWidth:3,pointRadius:0,showLine:true,fill:false},
+{label:'Alarm Marker',data:[{x:targetDay,y:targetRt}],pointStyle:'crossRot',pointBackgroundColor:'#FF0000',pointBorderColor:'#FF0000',pointRadius:8,showLine:false}];
+if(hasActualData)rds.push({label:'Failure event',data:fm.actualData,backgroundColor:'#FFFFFF',pointRadius:4,showLine:false});
+
+chartRel=new Chart(relCanvas.getContext('2d'),{type:'line',data:{datasets:rds},options:{...darkTheme,scales:{...darkTheme.scales,x:{...darkTheme.scales.x,type:'logarithmic',min:1,max:xMaxRel},y:{...darkTheme.scales.y,min:yMin,max:105,title:{...darkTheme.scales.y.title,text:'R(t) - %'}}}}});
+
+const lg=document.getElementById('reliability-legend');
+if(lg)lg.innerHTML='<span class="lg-item"><span class="lg-line"></span>Reliability Curve</span><span class="lg-item"><span class="lg-line lg-dash-y"></span>Ongoing</span><span class="lg-item"><span class="lg-line lg-dash-r"></span>Alarm</span>'+(hasActualData?'<span class="lg-item"><span class="lg-circle"></span>Failure event</span>':'');
+
+const frTheme=JSON.parse(JSON.stringify(darkTheme));frTheme.scales.y.title.text='Failure Rate';
+chartFR=new Chart(document.getElementById('chart-failurerate').getContext('2d'),{type:'line',data:{datasets:[
+{label:'Failure Rate',data:fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})),borderColor:'#00BFFF',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
+{label:'Ongoing',data:[{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}],borderColor:'#FFFF00',borderDash:[5,5],borderWidth:1.5,pointRadius:0,showLine:true,fill:false},
+{label:'Ongoing Marker',data:[{x:ed,y:cFR}],pointStyle:'rectRot',pointBackgroundColor:'#FFFF00',pointRadius:6,showLine:false}]},options:{...frTheme,plugins:{...frTheme.plugins,legend:{display:false}},scales:{...frTheme.scales,x:{...frTheme.scales.x,type:'linear',min:0},y:{...frTheme.scales.y,min:0}}}});
 }
 
-function updateCurrentDayLines(){
-    if(!chartRel||!chartFR||!appData)return;
-    const fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];
-    const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
-    const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
-    const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+function updateCurrentDayLines(){if(!chartRel||!chartFR||!appData)return;const fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);if(chartRel.data.datasets[1])chartRel.data.datasets[1].data=[{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}];if(chartRel.data.datasets[2])chartRel.data.datasets[2].data=[{x:ed,y:cRel}];chartRel.update('none');if(chartFR.data.datasets[1])chartFR.data.datasets[1].data=[{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}];if(chartFR.data.datasets[2])chartFR.data.datasets[2].data=[{x:ed,y:cFR}];chartFR.update('none');if(chartZoom)updateZoomChart();}
+function updateUI(){if(document.getElementById('view-diagram').classList.contains('active'))updateDiagramColors();else if(document.getElementById('view-table').classList.contains('active'))renderTable(currentComponentId);}
 
-    // Reliability Chart: Update Ongoing Line (Index 1) and Ongoing Diamond (Index 2)
-    if(chartRel.data.datasets[1]) chartRel.data.datasets[1].data = [{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}];
-    if(chartRel.data.datasets[2]) chartRel.data.datasets[2].data = [{x:ed,y:cRel}];
-    chartRel.update('none');
-
-    // Failure Rate Chart: Update Ongoing Line (Index 1) and Ongoing Diamond (Index 2)
-    if(chartFR.data.datasets[1]) chartFR.data.datasets[1].data = [{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}];
-    if(chartFR.data.datasets[2]) chartFR.data.datasets[2].data = [{x:ed,y:cFR}];
-    chartFR.update('none');
+/* CADEN Footer Polling - more robust */
+function startCADENFooterPolling(){
+var tries=0,MAX=30,dumped=false;
+function findUser(){var raw=localStorage.getItem('RCM_USER_INFO')||localStorage.getItem('RCM_DASHBOARD_USER_INFO');if(raw){try{var u=JSON.parse(raw);if(u&&u.name&&u.name.length>1)return u.name;}catch(e){}}return null;}
+function decodeExp(tok){try{var p=tok.split('.')[1];p=p.replace(/-/g,'+').replace(/_/g,'/');while(p.length%4)p+='=';var json=decodeURIComponent(atob(p).split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);}).join(''));var pl=JSON.parse(json);return pl&&pl.exp?new Date(pl.exp*1000).toLocaleString():null;}catch(e){return null;}}
+function findExpiry(){var tok=localStorage.getItem('RCM_AUTH_TOKEN')||localStorage.getItem('RCM_DASHBOARD_AUTH_TOKEN');if(tok){var e=decodeExp(tok);if(e)return e;}for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);var v=localStorage.getItem(k);if(v&&v.length>20&&v.indexOf('eyJ')===0&&v.split('.').length===3){var e2=decodeExp(v);if(e2)return e2;}}try{var gb=JSON.parse(localStorage.getItem('RCM_GENESIS_BUNCH')||'{}');var td=parseInt(localStorage.getItem('RCM_SERVER_TRIAL_DAYS')||'0',10);if(gb&&gb.genesisEpoch&&td>0)return new Date(gb.genesisEpoch+td*86400000).toLocaleString();}catch(e){}return null;}
+function render(){var name=findUser(),exp=findExpiry();var nEl=document.getElementById('footer-user-name');var eEl=document.getElementById('footer-license-expiry');if(nEl&&name)nEl.innerText=name;if(eEl&&exp)eEl.innerText=exp;if(!dumped){console.log('CADEN footer | user:',name,'| expiry:',exp);dumped=true;}if(name&&exp){clearInterval(iv);}else if(++tries>=MAX){clearInterval(iv);console.warn('Footer polling stopped after',MAX,'tries.');}}
+render();var iv=setInterval(render,1000);
+// Fallback: one more check after 3 seconds
+setTimeout(function(){var name=findUser(),exp=findExpiry();var nEl=document.getElementById('footer-user-name');var eEl=document.getElementById('footer-license-expiry');if(nEl&&!nEl.innerText||nEl.innerText==='—')if(name)nEl.innerText=name;if(eEl&&!eEl.innerText||eEl.innerText==='—')if(exp)eEl.innerText=exp;},3000);
 }
-        function updateUI(){if(document.getElementById('view-diagram').classList.contains('active'))updateDiagramColors();else if(document.getElementById('view-table').classList.contains('active'))renderTable(currentComponentId);}
 
-        // Function to read CADEN data and update the UI (Polls every 1 second)
-        
-    
-// --- CADEN footer info: JWT first, then genesis+trial fallback ---
-(function(){
-    var tries = 0, MAX = 20, dumped = false;
-    function findUser(){
-        var raw = localStorage.getItem('RCM_USER_INFO') || localStorage.getItem('RCM_DASHBOARD_USER_INFO');
-        if(raw){ try{ var u=JSON.parse(raw); if(u && u.name) return u.name; }catch(e){} }
-        return null;
+/* Intro Video - waits until registration is complete */
+window.startIntroVideo=function(){
+var overlay=document.getElementById('intro-overlay');var video=document.getElementById('intro-video');var skip=document.getElementById('skip-btn');var start=document.getElementById('start-btn');var app=document.getElementById('app-container');
+if(!overlay||!video||!app)return;
+var started=false,done=false,safety=null,waitAttempts=0;
+function revealApp(){if(done)return;done=true;if(safety)clearTimeout(safety);overlay.classList.remove('fade');setTimeout(function(){overlay.classList.remove('show');app.classList.add('visible');if(window.positionHandles)window.positionHandles();},1000);}
+function begin(){if(started||done)return;started=true;overlay.classList.add('show');requestAnimationFrame(function(){requestAnimationFrame(function(){overlay.classList.add('fade');});});var p=video.play();if(p&&p.catch){p.catch(function(){start.style.display='block';});}video.addEventListener('ended',revealApp);video.addEventListener('error',revealApp);safety=setTimeout(revealApp,12000);}
+
+skip.addEventListener('click',revealApp);overlay.addEventListener('click',function(e){if(e.target===overlay)revealApp();});start.addEventListener('click',function(){start.style.display='none';video.muted=false;var p=video.play();if(p&&p.catch)p.catch(function(){});});
+begin(); // Starts immediately after CADEN_READY fires
+};
+
+/* Main Init (Fix A & B) */
+function ensureCore(){
+    if(window._coreReady) return; window._coreReady=true;
+    if(typeof EMBEDDED_DATA!=='undefined'&&EMBEDDED_DATA){
+        try{var pwd=atob(EMBEDDED_PWD_B64);var dec=CryptoJS.AES.decrypt(EMBEDDED_DATA,pwd).toString(CryptoJS.enc.Utf8);if(dec){appData=JSON.parse(dec);document.getElementById('day-slider').max=appData.maxDays||365;document.getElementById('global-slider').style.display='flex';updateDiagramColors();}}catch(err){console.error("Auto-load failed:",err);}
     }
-    function decodeJwtExp(tok){
-        try{
-            var p = tok.split('.')[1];
-            p = p.replace(/-/g,'+').replace(/_/g,'/');
-            while(p.length%4) p+='=';
-            var json = decodeURIComponent(atob(p).split('').map(function(c){
-                return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            var pl = JSON.parse(json);
-            return pl && pl.exp ? new Date(pl.exp*1000).toLocaleString() : null;
-        }catch(e){ return null; }
-    }
-    function findExpiry(){
-        // 1) JWT path
-        var tok = localStorage.getItem('RCM_AUTH_TOKEN') || localStorage.getItem('RCM_DASHBOARD_AUTH_TOKEN');
-        if(tok){ var e=decodeJwtExp(tok); if(e) return {src:'JWT',val:e}; }
-        // 2) Genesis + trial-days path (CADEN trial model)
-        try{
-            var gb = JSON.parse(localStorage.getItem('RCM_GENESIS_BUNCH') || '{}');
-            var td = parseInt(localStorage.getItem('RCM_SERVER_TRIAL_DAYS') || '0', 10);
-            if(gb && gb.genesisEpoch && td > 0){
-                var expMs = gb.genesisEpoch + (td * 86400000);
-                return {src:'Genesis+'+td+'d', val: new Date(expMs).toLocaleString()};
-            }
-        }catch(e){}
-        return null;
-    }
-    function render(){
-        var name = findUser(), expInfo = findExpiry();
-        var nEl = document.getElementById('footer-user-name') || document.getElementById('caden-display-name');
-        var eEl = document.getElementById('footer-license-expiry') || document.getElementById('caden-display-expiry');
-        if(nEl && name) nEl.innerText = name;
-        if(eEl && expInfo) eEl.innerText = expInfo.val;
-        if(!dumped){
-            console.log('🔍 localStorage keys:', Object.keys(localStorage));
-            console.log('   user:', name, '| expiry:', expInfo ? expInfo.val+' ['+expInfo.src+']' : 'null');
-            dumped = true;
-        }
-        if(name && expInfo){ clearInterval(iv); console.log('🏁 CADEN info loaded.'); }
-        else if(++tries >= MAX){ clearInterval(iv); console.warn('⚠️ CADEN token still not found after', MAX, 'tries. Stopping poll.'); }
-    }
-    render();
-    var iv = setInterval(render, 1000);
-})();
+    startCADENFooterPolling();
+}
+function revealWithoutIntro(){ensureCore();var app=document.getElementById('app-container');if(app){app.style.display='block';app.classList.add('visible');}if(window.positionHandles)setTimeout(window.positionHandles,100);}
+function initRCMApp(){
+    if(window.cadenInitialized)return; window.cadenInitialized=true;
+    console.log("RCM App: Initializing (CADEN_READY received)...");
+    ensureCore();
+    if(window.startIntroVideo){window.startIntroVideo();}
+    else{revealWithoutIntro();}
+}
+window.addEventListener('CADEN_READY',initRCMApp);
+setTimeout(function(){if(!window.cadenInitialized){console.warn("CADEN fallback: revealing app WITHOUT intro (registration may still be open).");revealWithoutIntro();}},3000);
+
+/* Quadrant Manager */
+var QM=(function(){var grid=document.getElementById('quad-grid');if(!grid)return{};
+var DEF={rows:'1fr 2.4fr',cols:'1fr 1fr'};
+var h=document.createElement('div');h.className='resize-handle resize-h';h.dataset.dir='row';
+var v=document.createElement('div');v.className='resize-handle resize-v';v.dataset.dir='col';
+grid.appendChild(h);grid.appendChild(v);
+var layoutModified=false;
+function applySaved(){var s=localStorage.getItem('quad-layout');if(s){try{var l=JSON.parse(s);grid.style.gridTemplateRows=l.rows;grid.style.gridTemplateColumns=l.cols;layoutModified=true;showResetBtn();}catch(e){}}}
+function position(){var g=grid.getBoundingClientRect();if(g.width===0)return;var q1=grid.querySelector('.q1').getBoundingClientRect();var q2=grid.querySelector('.q2').getBoundingClientRect();var q3=grid.querySelector('.q3').getBoundingClientRect();h.style.top=(q3.top-g.top-3)+'px';v.style.left=(q2.left-g.left-3)+'px';}
+function setRows(p){p=Math.max(15,Math.min(45,p));grid.style.gridTemplateRows=p+'% '+(100-p)+'%';}
+function setCols(p){p=Math.max(20,Math.min(80,p));grid.style.gridTemplateColumns=p+'% '+(100-p)+'%';}
+function showResetBtn(){document.getElementById('reset-layout-btn').classList.add('visible');}
+var drag=null;
+function startDrag(e,dir){drag={dir:dir};e.preventDefault();(dir==='row'?h:v).classList.add('active');document.body.style.userSelect='none';}
+h.addEventListener('mousedown',function(e){startDrag(e,'row');});
+v.addEventListener('mousedown',function(e){startDrag(e,'col');});
+document.addEventListener('mousemove',function(e){if(!drag)return;var g=grid.getBoundingClientRect();if(drag.dir==='row'){setRows(((e.clientY-g.top)/g.height)*100);}else{setCols(((e.clientX-g.left)/g.width)*100);}position();if(chartRel)chartRel.resize();if(chartFR)chartFR.resize();layoutModified=true;showResetBtn();});
+document.addEventListener('mouseup',function(){if(!drag)return;h.classList.remove('active');v.classList.remove('active');document.body.style.userSelect='';localStorage.setItem('quad-layout',JSON.stringify({rows:grid.style.gridTemplateRows,cols:grid.style.gridTemplateColumns}));drag=null;});
+window.resetQuadrantLayout=function(){grid.style.gridTemplateRows=DEF.rows;grid.style.gridTemplateColumns=DEF.cols;localStorage.removeItem('quad-layout');layoutModified=false;document.getElementById('reset-layout-btn').classList.remove('visible');position();if(chartRel)chartRel.resize();if(chartFR)chartFR.resize();};
+window.positionHandles=position;
+window.addEventListener('resize',position);
+applySaved();
+return{position:position};})();
+
+/* Chart Zoom Modal */
+window.openChartZoom=function(type){
+if(!appData||!currentComponentId||currentFailureModeIndex===null)return;
+var modal=document.getElementById('chart-zoom-modal');
+var canvas=document.getElementById('zoom-chart-canvas');
+var zoomSlider=document.getElementById('zoom-day-slider');
+var zoomValue=document.getElementById('zoom-day-value');
+modal.classList.add('show');zoomChartType=type;
+zoomSlider.max=document.getElementById('day-slider').max;
+zoomSlider.value=currentDay;
+zoomValue.innerText=currentDay;
+zoomSlider.oninput=function(e){currentDay=parseInt(e.target.value);document.getElementById('day-slider').value=currentDay;document.getElementById('day-value').innerText=currentDay;zoomValue.innerText=currentDay;try{updateCurrentDayLines();}catch(err){}updateDiagramColors();};
+if(chartZoom)chartZoom.destroy();
+var fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];
+var ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);
+var cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);
+var cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+let targetRt=parseFloat(fm.targetRt)||99.0,targetDay=parseFloat(fm.targetDay);
+const maxDays=Math.max(...fm.days);
+if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){for(let i=0;i<fm.reliabilityData.length-1;i++){if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;}}}
+const hasActualData=fm.actualData&&fm.actualData.length>0;
+const zoomTheme={responsive:true,maintainAspectRatio:false,color:'#FFFFFF',plugins:{title:{display:true,text:'Failure Mode: '+fm.name,color:'#FFFFFF',font:{size:18,weight:'bold',family:"'Segoe UI', sans-serif"},padding:{top:20,bottom:20}},legend:{display:false}},scales:{x:{grid:{color:'#444444',lineWidth:1},ticks:{color:'#FFFFFF',font:{size:11}},title:{display:true,text:'Next x days (hari)',color:'#FFFFFF',font:{size:13,weight:'bold'}}},y:{grid:{color:'#444444',lineWidth:1},ticks:{color:'#FFFFFF',font:{size:11}},title:{display:true,text:type==='reliability'?'R(t) - %':'Failure Rate',color:'#FFFFFF',font:{size:13,weight:'bold'}}}}};
+var datasets;
+if(type==='reliability'){setTimeout(updateZoomLegend,100);
+datasets=[
+{label:'Reliability Curve',data:fm.days.map((d,i)=>({x:d,y:fm.reliabilityData[i]})),borderColor:'#00BFFF',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
+{label:'Ongoing',data:[{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}],borderColor:'#FFFF00',borderDash:[5,5],borderWidth:1.5,pointRadius:0,showLine:true,fill:false},
+{label:'Alarm',data:[{x:1,y:targetRt},{x:targetDay,y:targetRt},{x:targetDay,y:0}],borderColor:'#FF0000',borderDash:[5,5],borderWidth:3,pointRadius:0,showLine:true,fill:false}];
+if(hasActualData)datasets.push({label:'Failure event',data:fm.actualData,backgroundColor:'#FFFFFF',pointRadius:5,showLine:false});
+chartZoom=new Chart(canvas.getContext('2d'),{type:'line',data:{datasets:datasets},options:{...zoomTheme,scales:{...zoomTheme.scales,x:{...zoomTheme.scales.x,type:'logarithmic',min:1,max:fm.chartXMax||maxDays},y:{...zoomTheme.scales.y,min:fm.chartYMin||0,max:105}}}});
+}else{
+datasets=[
+{label:'Failure Rate',data:fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})),borderColor:'#00BFFF',borderWidth:2,tension:0.4,pointRadius:0,fill:false},
+{label:'Ongoing',data:[{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}],borderColor:'#FFFF00',borderDash:[5,5],borderWidth:1.5,pointRadius:0,showLine:true,fill:false}];
+chartZoom=new Chart(canvas.getContext('2d'),{type:'line',data:{datasets:datasets},options:{...zoomTheme,scales:{...zoomTheme.scales,x:{...zoomTheme.scales.x,type:'linear',min:0},y:{...zoomTheme.scales.y,min:0}}}});setTimeout(updateZoomLegend,100);
+}
+};
+window.closeChartZoom=function(){var modal=document.getElementById('chart-zoom-modal');modal.classList.remove('show');if(chartZoom){chartZoom.destroy();chartZoom=null;}};
+var zoomChartType=null;
+function updateZoomChart(){if(!chartZoom||!zoomChartType)return;var fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];var ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);var cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);var cFR=getValueAtDay(fm.days,fm.failureRateData,ed);
+if(zoomChartType==='reliability'){if(chartZoom.data.datasets[1])chartZoom.data.datasets[1].data=[{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}];}
+else{if(chartZoom.data.datasets[1])chartZoom.data.datasets[1].data=[{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}];}
+chartZoom.update('none');}
+function updateZoomLegend(){var lg=document.getElementById('zoom-legend');if(!lg||!zoomChartType)return;var fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];var hasActualData=fm.actualData&&fm.actualData.length>0;
+if(zoomChartType==='reliability'){lg.innerHTML='<span class="lg-item"><span class="lg-line"></span>Reliability Curve</span><span class="lg-item"><span class="lg-line lg-dash-y"></span>Ongoing</span><span class="lg-item"><span class="lg-line lg-dash-r"></span>Alarm</span>'+(hasActualData?'<span class="lg-item"><span class="lg-circle"></span>Failure event</span>':'');}
+else{lg.innerHTML='<span class="lg-item"><span class="lg-line"></span>Failure Rate</span><span class="lg-item"><span class="lg-line lg-dash-y"></span>Ongoing</span>';}}
+function syncZoomSlider(){var zs=document.getElementById('zoom-day-slider');if(zs)zs.value=currentDay;var zv=document.getElementById('zoom-day-value');if(zv)zv.innerText=currentDay;}
+document.getElementById('chart-zoom-modal').addEventListener('click',function(e){if(e.target===this)closeChartZoom();});
+
+/* Lightbox */
+document.addEventListener('click',function(e){if(e.target&&e.target.id==='equip-img'){var lb=document.getElementById('lightbox');lb.querySelector('img').src=e.target.src;lb.style.display='flex';}if(e.target&&e.target.id==='lightbox'){e.target.style.display='none';}});
 </script>
 </body>
 </html>
