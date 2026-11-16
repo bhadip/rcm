@@ -55,18 +55,13 @@
 - Conditional red chart border when a Failure Mode has actual failure-event data.
 - Intersection markers move correctly with the slider (separated line vs. marker datasets).
 
-### v0.9.10
-- **Intro video timing (real fix):** Decoupled app-reveal from intro-play. The intro now plays ONLY when the genuine `CADEN_READY` event fires (i.e. after registration/licensing completes). The 3s fail-open fallback reveals the app *without* the video, so the clip can no longer run over the registration form, and a broken CADEN still never bricks the UI.
-- **Level 2 toolbar:** "Reset Layout" moved to the right edge (mirroring "Back to Table" on the left); Failure Mode name centered. Both buttons share the grey→blue hover.
 
-### v0.9.18
-- **Real SVG Diagram Integration:** Replaced legacy JPG + manual SVG overlay with a fully inline, scalable SVG diagram exported from Draw.io.
-- **Dynamic Status Coloring:** Implemented surgical attribute stripping for the 11 tracked components, allowing CSS-driven Green/Yellow/Red status updates based on Excel data, while perfectly preserving Draw.io's native styling for non-tracked elements (arrows, WELLHEAD, FLARE, etc.).
-- **Dark Mode / Black Canvas Fix:** Forced `color-scheme: light` and explicit background colors on the SVG root to prevent macOS Dark Mode from rendering the diagram canvas and boxes as solid black.
-- **Data Integrity:** Eliminated persistent "garbage JSON" injection by rebuilding the diagram source and sanitizing the build pipeline.
 
-### v0.9.17
-- **Real SVG Diagram Integration:** Replaced legacy JPG + manual SVG overlay with a fully inline, scalable SVG diagram exported from Draw.io.
-- **Dynamic Status Coloring:** Implemented surgical attribute stripping for the 11 tracked components, allowing CSS-driven Green/Yellow/Red status updates based on Excel data, while perfectly preserving Draw.io's native styling for non-tracked elements (arrows, WELLHEAD, FLARE, etc.).
-- **Dark Mode / Black Canvas Fix:** Forced `color-scheme: light` and explicit background colors on the SVG root to prevent macOS Dark Mode from rendering the diagram canvas and boxes as solid black.
-- **Data Integrity:** Eliminated persistent "garbage JSON" injection by rebuilding the diagram source and sanitizing the build pipeline.
+
+
+### v0.9.19
+- **Stability & Syntax Overhaul:** Rebuilt `index.html` from a clean, syntactically perfect template to eliminate persistent JavaScript crashes (white screen).
+- **Zoom Chart Perfection:** Fixed empty Reliability zoom chart by defining `yMin`/`yMax` in zoom scope; added missing diamond/cross markers; ensured markers slide with the global slider.
+- **Video Playback:** Implemented robust unmuted autoplay with silent-fallback detection; added "Welcome to RCM Dashboard" button and 60s safety timeout.
+- **Architecture:** Finalized `index.html` as the single source of truth; `generate_complete.py` now purely stitches the SVG diagram.
+- **Data:** Updated build pipeline to support `RCM 5.xlsx`.
