@@ -67,26 +67,32 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{padding:12px;te
 .calibration-mode #calibration-controls{display:block;}#calibration-controls label{display:block;margin:5px 0;font-size:.9rem;}#calibration-controls select,#calibration-controls input{width:100%;padding:5px;margin:5px 0;}
 </style>
 
+
+
+
+
+
+
+
 <!-- START CADEN LICENSING -->
 <script>
 (function () {
-    const CADEN_VERSION = "0.6.8";
+    const CADEN_VERSION = "0.6.12";
     const CADEN_CONFIG = {
         appId: "RCM",
         appVersion: (typeof APP_BUILD_META !== 'undefined' && APP_BUILD_META.appVersion) ? APP_BUILD_META.appVersion : (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown'),
         serverUrl: "https://caden.prasanti.com",
         wssUrl: "wss://caden.prasanti.com/v1/stream",
-        trialDays: 3, 
+        trialDays: 7,
         logLevel: 2
     };
-
     const KEYS = {
-        token: CADEN_CONFIG.appId + '_AUTH_TOKEN',
-        userInfo: CADEN_CONFIG.appId + '_USER_INFO',
-        genesis: CADEN_CONFIG.appId + '_GENESIS'
+        token: 'RCM_AUTH_TOKEN',
+        userInfo: 'RCM_USER_INFO',
+        genesis: 'RCM_GENESIS',
+        pendingReg: 'RCM_PENDING_REG'
     };
 
-    // --- HARDWARE-ONLY FINGERPRINT (v0.6.6+) ---
     function generateDeviceFingerprint() {
         try {
             const parts = [];
@@ -98,23 +104,42 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{padding:12px;te
             try {
                 const c = document.createElement('canvas');
                 const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
-                if (gl) {
-                    const d = gl.getExtension('WEBGL_debug_renderer_info');
-                    if (d) parts.push('GPU:' + gl.getParameter(d.UNMASKED_RENDERER_WEBGL));
-                }
+                if (gl) { const d = gl.getExtension('WEBGL_debug_renderer_info'); if (d) parts.push('GPU:' + gl.getParameter(d.UNMASKED_RENDERER_WEBGL)); }
             } catch(e) {}
-            const combined = parts.join('|');
-            let hash = 0;
-            for (let i = 0; i < combined.length; i++) {
-                hash = ((hash << 5) - hash) + combined.charCodeAt(i);
-                hash |= 0;
-            }
+            const combined = parts.join('|'); let hash = 0;
+            for (let i = 0; i < combined.length; i++) { hash = ((hash << 5) - hash) + combined.charCodeAt(i); hash |= 0; }
             const prefix = CADEN_CONFIG.appId.split('_')[0].toUpperCase();
             return prefix + "-" + Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
         } catch (e) { return "RCM-GENERIC-00000000"; }
     }
 
-    // --- UI HELPERS ---
+    function collectSystemInfo() {
+        const info = {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            cpuCores: navigator.hardwareConcurrency || 0,
+            deviceMemory: navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Unknown',
+            screenRes: screen.width + 'x' + screen.height,
+            timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || ''),
+            webglRenderer: (function(){ try { const c=document.createElement('canvas'); const gl=c.getContext('webgl')||c.getContext('experimental-webgl'); const d=gl&&gl.getExtension('WEBGL_debug_renderer_info'); return d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL):''; } catch(e){ return ''; } })(),
+            appVersion: CADEN_CONFIG.appVersion,
+            cadenVersion: CADEN_VERSION
+        };
+        if (typeof APP_BUILD_META !== 'undefined') {
+            info.buildDataVersion = APP_BUILD_META.buildDataVersion || 'Unknown';
+            info.embedDataVersion = APP_BUILD_META.embedDataVersion || 'Unknown';
+            info.sourceExcelFile = APP_BUILD_META.sourceExcelFile || 'Unknown';
+        }
+        return info;
+    }
+
+    function syncProfile() {
+        try {
+            const payload = { deviceId: generateDeviceFingerprint(), systemInfo: collectSystemInfo() };
+            fetch(CADEN_CONFIG.serverUrl + '/v1/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function(){});
+        } catch(e) {}
+    }
+
     function executeLockdownScreen(reason) {
         let overlay = document.getElementById('caden-lockdown-overlay');
         if (!overlay) {
@@ -123,30 +148,20 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{padding:12px;te
             overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0f172a;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-family:sans-serif;';
             document.body.appendChild(overlay);
         }
-        overlay.innerHTML = `
-            <div style="background:#1e293b;padding:2rem;border-radius:8px;text-align:center;max-width:400px;">
-                <h2 style="color:#ef4444;margin-bottom:1rem;">CADEN Governance Lockdown</h2>
-                <p style="margin-bottom:1rem;">${reason}</p>
-                <p style="font-size:0.8rem;color:#94a3b8;">Device ID: ${generateDeviceFingerprint()} | Script v${CADEN_VERSION}</p>
-            </div>`;
-        document.body.querySelectorAll(':not(#caden-lockdown-overlay)').forEach(el => { if(el.parentNode) el.style.display = 'none'; });
+        overlay.innerHTML = '<div style="background:#1e293b;padding:2rem;border-radius:8px;text-align:center;max-width:400px;"><h2 style="color:#ef4444;margin-bottom:1rem;">CADEN Governance Lockdown</h2><p style="margin-bottom:1rem;">' + reason + '</p><p style="font-size:0.8rem;color:#94a3b8;">Device ID: ' + generateDeviceFingerprint() + ' | Script v' + CADEN_VERSION + '</p></div>';
+        document.body.querySelectorAll(':not(#caden-lockdown-overlay)').forEach(function(el){ if(el.parentNode) el.style.display='none'; });
         document.body.appendChild(overlay);
     }
 
     function revealApp() {
-        const overlay = document.getElementById('caden-lockdown-overlay');
-        if (overlay) overlay.remove();
-        const modal = document.getElementById('caden-reg-modal');
-        if (modal) modal.style.display = 'none';
-        document.body.querySelectorAll('[style*="display: none"]').forEach(el => {
-            if (el.id !== 'caden-lockdown-overlay') el.style.display = '';
-        });
-        // Dispatch event for RCM App to initialize
+        const overlay = document.getElementById('caden-lockdown-overlay'); if (overlay) overlay.remove();
+        const modal = document.getElementById('caden-reg-modal'); if (modal) modal.style.display = 'none';
+        document.body.querySelectorAll('[style*="display: none"]').forEach(function(el){ if (el.id !== 'caden-lockdown-overlay') el.style.display = ''; });
         window.dispatchEvent(new CustomEvent('CADEN_READY'));
         window.cadenInitialized = true;
     }
 
-    function showRegistrationModal(isAppeal) {
+    function showRegistrationModal() {
         let modal = document.getElementById('caden-reg-modal');
         if (!modal) {
             modal = document.createElement('div');
@@ -154,126 +169,126 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{padding:12px;te
             modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:999998;display:flex;align-items:center;justify-content:center;';
             document.body.appendChild(modal);
         }
-        modal.innerHTML = `
-            <div style="background:#fff;padding:2rem;border-radius:8px;width:300px;color:#000;">
-                <h3 style="margin-top:0;">CADEN Registration</h3>
-                <input id="caden-reg-name" placeholder="Full Name" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;">
-                <input id="caden-reg-email" placeholder="Email" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;">
-                <input id="caden-reg-wa" placeholder="WhatsApp" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;">
-                <button id="caden-reg-submit" style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;">Activate</button>
-            </div>`;
+        modal.innerHTML = '<div style="background:#fff;padding:2rem;border-radius:8px;width:300px;color:#000;"><h3 style="margin-top:0;">CADEN Registration</h3><input id="caden-reg-name" placeholder="Full Name" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;"><input id="caden-reg-email" placeholder="Email" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;"><input id="caden-reg-wa" placeholder="WhatsApp" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;"><button id="caden-reg-submit" style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;">Activate</button></div>';
         modal.style.display = 'flex';
-        
-        document.getElementById('caden-reg-submit').onclick = async () => {
+        document.getElementById('caden-reg-submit').onclick = async function () {
             const name = document.getElementById('caden-reg-name').value;
             const email = document.getElementById('caden-reg-email').value;
             const wa = document.getElementById('caden-reg-wa').value;
-            if(!name) return alert('Name required');
-            
+            if (!name) return alert('Name required');
             const devId = generateDeviceFingerprint();
-            const url = `${CADEN_CONFIG.serverUrl}/v1/activate?appId=${CADEN_CONFIG.appId}&deviceId=${devId}&ownerName=${encodeURIComponent(name)}&ownerEmail=${encodeURIComponent(email)}&ownerWhatsapp=${encodeURIComponent(wa)}`;
-            
+            const userInfoObj = { name: name, email: email, whatsapp: wa };
+            console.log('CADEN: Saving initial userInfo to localStorage:', userInfoObj);
+            localStorage.setItem(KEYS.userInfo, JSON.stringify(userInfoObj));
+            localStorage.setItem(KEYS.genesis, Date.now().toString());
+            const url = CADEN_CONFIG.serverUrl + '/v1/activate?appId=' + CADEN_CONFIG.appId + '&deviceId=' + devId + '&ownerName=' + encodeURIComponent(name) + '&ownerEmail=' + encodeURIComponent(email) + '&ownerWhatsapp=' + encodeURIComponent(wa);
             try {
-                const res = await fetch(url, {method: 'POST'});
+                const res = await fetch(url, { method: 'POST' });
                 const data = await res.json();
-                if(res.ok && data.token) {
+                if (res.ok && data.token) {
                     localStorage.setItem(KEYS.token, data.token);
-                    localStorage.setItem(KEYS.userInfo, JSON.stringify({name, email, whatsapp: wa}));
-                    localStorage.setItem(KEYS.genesis, Date.now().toString());
-                    modal.remove();
-                    revealApp();
+                    localStorage.removeItem(KEYS.pendingReg);
+                    syncProfile();
+                    modal.remove(); revealApp();
                 } else {
-                    alert(data.detail || 'Registration failed');
+                    console.warn('CADEN: server rejected registration, proceeding offline.');
+                    localStorage.setItem(KEYS.pendingReg, JSON.stringify({ url: url, method: 'POST' }));
+                    modal.remove(); revealApp();
                 }
-            } catch(e) { alert('Network error'); }
+            } catch (e) {
+                console.warn('CADEN: network error, proceeding offline.');
+                localStorage.setItem(KEYS.pendingReg, JSON.stringify({ url: url, method: 'POST' }));
+                modal.remove(); revealApp();
+            }
         };
     }
 
-    // --- CORE LOGIC ---
     async function autoActivate() {
         const token = localStorage.getItem(KEYS.token);
         const devId = generateDeviceFingerprint();
         const userInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-        
-        const url = `${CADEN_CONFIG.serverUrl}/v1/activate?appId=${CADEN_CONFIG.appId}&deviceId=${devId}&ownerName=${encodeURIComponent(userInfo.name||'')}&ownerEmail=${encodeURIComponent(userInfo.email||'')}&ownerWhatsapp=${encodeURIComponent(userInfo.whatsapp||'')}`;
-        
+        const url = CADEN_CONFIG.serverUrl + '/v1/activate?appId=' + CADEN_CONFIG.appId + '&deviceId=' + devId + '&ownerName=' + encodeURIComponent(userInfo.name||'') + '&ownerEmail=' + encodeURIComponent(userInfo.email||'') + '&ownerWhatsapp=' + encodeURIComponent(userInfo.whatsapp||'');
         try {
-            const res = await fetch(url, {method: 'POST'});
+            const res = await fetch(url, { method: 'POST' });
             const data = await res.json();
-            
-            if (!res.ok) {
-                if (data.detail === 'Device Revoked') executeLockdownScreen("License has been revoked by administrator.");
-                return;
-            }
-
-            // FAIL-OPEN LOGIC
+            if (!res.ok) { if (data.detail === 'Device Revoked') executeLockdownScreen('License has been revoked by administrator.'); return; }
             const now = Math.floor(Date.now() / 1000);
-            const gracePeriod = 300; // 5 mins
+            if (data.status === 'REVOKED') { executeLockdownScreen('License has been revoked.'); return; }
+            if (data.expires_at) { const expDate = new Date(data.expires_at).getTime() / 1000; if (expDate < (now - 300)) { executeLockdownScreen('License has expired.'); return; } }
             
-            if (data.status === "REVOKED") {
-                executeLockdownScreen("License has been revoked.");
-                return;
+            // HARDENED MERGE: Only update if server provides data, preserving existing fields
+            if (data.owner_name || data.owner_email || data.owner_whatsapp) {
+                const ci = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                if (data.owner_name) ci.name = data.owner_name;
+                if (data.owner_email) ci.email = data.owner_email;
+                if (data.owner_whatsapp) ci.whatsapp = data.owner_whatsapp;
+                console.log('CADEN: Merging server userInfo into localStorage:', ci);
+                localStorage.setItem(KEYS.userInfo, JSON.stringify(ci));
             }
             
-            if (data.expires_at) {
-                const expDate = new Date(data.expires_at).getTime() / 1000;
-                if (expDate < (now - gracePeriod)) {
-                    executeLockdownScreen("License has expired.");
-                    return;
-                }
-            }
-
-            // Sync owner info from server
-            if (data.owner_name) {
-                const currentInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-                currentInfo.name = data.owner_name;
-                localStorage.setItem(KEYS.userInfo, JSON.stringify(currentInfo));
-            }
-
-            if (data.token) {
-                localStorage.setItem(KEYS.token, data.token);
-            }
-
-            // Silently handle fingerprint mismatch (no lockdown)
-            // Just ensure we have a valid token and let the app run.
+            if (data.token) localStorage.setItem(KEYS.token, data.token);
+            syncProfile();
             revealApp();
-
-        } catch (e) {
-            console.error("CADEN activation error:", e);
-            // Fail open: if we have a local token, let them in
-            if (token) revealApp();
-        }
+        } catch (e) { console.error('CADEN activation error:', e); if (token) revealApp(); }
     }
 
-    // --- INITIALIZATION ---
+    function attemptPendingRegistration() {
+        const pending = localStorage.getItem(KEYS.pendingReg);
+        if (!pending || !navigator.onLine) return;
+        try {
+            const req = JSON.parse(pending);
+            fetch(req.url, { method: req.method }).then(function(res){ return res.json(); }).then(function(data){
+                if (data.token) { 
+                    localStorage.setItem(KEYS.token, data.token); 
+                    localStorage.removeItem(KEYS.pendingReg); 
+                    // HARDENED MERGE for offline sync
+                    if (data.owner_name || data.owner_email || data.owner_whatsapp) {
+                        const ci = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
+                        if (data.owner_name) ci.name = data.owner_name;
+                        if (data.owner_email) ci.email = data.owner_email;
+                        if (data.owner_whatsapp) ci.whatsapp = data.owner_whatsapp;
+                        console.log('CADEN: Merging server userInfo after offline sync:', ci);
+                        localStorage.setItem(KEYS.userInfo, JSON.stringify(ci));
+                    }
+                    syncProfile(); 
+                    console.log('CADEN: offline registration synced successfully.'); 
+                    // Trigger autoActivate to ensure full state is synced and last_seen_at is updated
+                    autoActivate();
+                }
+            }).catch(function(e){ console.log('CADEN: pending registration retry failed.', e); });
+        } catch(e) {}
+    }
+
+    window.addEventListener('online', function(){ attemptPendingRegistration(); autoActivate(); });
+    setInterval(function(){ if (navigator.onLine) attemptPendingRegistration(); }, 5 * 60 * 1000);
+
     function init() {
-        // Inject Badge
         const badge = document.createElement('div');
         badge.style.cssText = 'position:fixed;top:10px;right:10px;background:#1e293b;color:#fff;padding:5px 10px;border-radius:4px;font-size:10px;z-index:999999;font-family:sans-serif;';
-        badge.innerHTML = `🛡️ Protected by CADEN<br>ID: ${generateDeviceFingerprint()}`;
+        badge.innerHTML = '🛡️ Protected by CADEN<br>ID: ' + generateDeviceFingerprint();
         document.body.appendChild(badge);
-
+        
         const token = localStorage.getItem(KEYS.token);
         const hasGenesis = localStorage.getItem(KEYS.genesis);
         const hasUserInfo = localStorage.getItem(KEYS.userInfo);
-
-        if (!token && !hasGenesis && !hasUserInfo) {
-            showRegistrationModal(false);
-        } else {
-            autoActivate();
+        
+        if (!token && !hasGenesis && !hasUserInfo) { 
+            showRegistrationModal(); 
+        } else { 
+            autoActivate(); 
+        }
+        
+        // GUARANTEE: Always sync profile on online load, independently of the activation path
+        if (navigator.onLine) {
+            syncProfile();
+            attemptPendingRegistration();
         }
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-    // Global hooks for RCM App
-    window.storeSystemTelemetry = function(type, payload, level) { console.log('CADEN Telemetry:', type, payload); };
-    window.logCadenOperation = function(type, msg) { console.log('CADEN Log:', type, msg); };
-
+    window.storeSystemTelemetry = function(type, payload, level){ console.log('CADEN Telemetry:', type, payload); };
+    window.logCadenOperation = function(type, msg){ console.log('CADEN Log:', type, msg); };
 })();
 </script>
 <!-- END CADEN LICENSING -->

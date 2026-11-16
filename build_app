@@ -1,0 +1,5 @@
+python3 build_data.py "RCM 5.xlsx"
+python3 generate_complete.py
+python3 integrate_caden.py
+python3 embed_data.py "RCM 5.xlsx"
+
