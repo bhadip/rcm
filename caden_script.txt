@@ -1,13 +1,13 @@
-<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.12) -->
+<!-- START CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.14) -->
 <script>
 (function () {
-    const CADEN_VERSION = "0.6.12";
+    const CADEN_VERSION = "0.6.14";
     const CADEN_CONFIG = {
         appId: "RCM",
         appVersion: (typeof APP_BUILD_META !== 'undefined' && APP_BUILD_META.appVersion) ? APP_BUILD_META.appVersion : (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown'),
         serverUrl: "https://caden.prasanti.com",
         wssUrl: "wss://caden.prasanti.com/v1/stream",
-        trialDays: 7,
+        trialDays: 30,
         logLevel: 2
     };
     const KEYS = {
@@ -211,8 +211,36 @@
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-    window.storeSystemTelemetry = function(type, payload, level){ console.log('CADEN Telemetry:', type, payload); };
+    window.storeSystemTelemetry = function(type, payload, level) {
+        if (!navigator.onLine) return;
+        const devId = generateDeviceFingerprint();
+        fetch(CADEN_CONFIG.serverUrl + '/v1/telemetry', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                appId: CADEN_CONFIG.appId,
+                entries: [{
+                    epoch: Math.floor(Date.now()/1000),
+                    level: level || 2,
+                    type: type,
+                    detail: typeof payload === 'string' ? payload : JSON.stringify(payload),
+                    device: devId
+                }]
+            })
+        }).catch(()=>{});
+    };
     window.logCadenOperation = function(type, msg){ console.log('CADEN Log:', type, msg); };
 })();
+
+    // Activity-Based Heartbeat (v0.6.14)
+    let lastActivitySync = Date.now();
+    function handleUserActivity() {
+        const now = Date.now();
+        if (now - lastActivitySync > 60000) { // 60 seconds
+            if (navigator.onLine) syncProfile();
+            lastActivitySync = now;
+        }
+    }
+    ['keydown', 'mousemove', 'click', 'scroll'].forEach(evt => window.addEventListener(evt, handleUserActivity));
 </script>
 <!-- END CADEN LICENSING & GOVERNANCE COMPONENT (v0.6.11) -->

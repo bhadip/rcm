@@ -65,3 +65,9 @@
 - **Video Playback:** Implemented robust unmuted autoplay with silent-fallback detection; added "Welcome to RCM Dashboard" button and 60s safety timeout.
 - **Architecture:** Finalized `index.html` as the single source of truth; `generate_complete.py` now purely stitches the SVG diagram.
 - **Data:** Updated build pipeline to support `RCM 5.xlsx`.
+
+### v0.9.20
+- **CADEN Integration v0.6.13:** Added activity-based heartbeat (keystroke/mouse), real-time telemetry logging, and 30-day trial default.
+- **Self-Healing Upsert:** `/v1/activate` now correctly upserts owner details from the request body.
+- **Online Heartbeat:** `/v1/profile` dispatched on load and via debounced activity listener.
+- **Stability:** Resolved all CORS, 500 errors, and JWT decoding race conditions.

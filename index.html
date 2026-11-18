@@ -1,7 +1,7 @@
-<!-- Version: v0.9.19 -->
+<!-- Version: v0.9.20 -->
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RCM Reliability Dashboard v0.9.19</title>
+<title>RCM Reliability Dashboard v0.9.20</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F172A'/%3E%3Cpath d='M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z' fill='%231E293B' stroke='%233B82F6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%2310B981' stroke-width='4'/%3E%3Cpath d='M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34' stroke='%2310B981' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <script src="crypto-js.min.js"></script><script src="chart.umd.js"></script>
 <style>
@@ -74,16 +74,18 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{padding:12px;te
 
 
 
+
+
 <!-- START CADEN LICENSING -->
 <script>
 (function () {
-    const CADEN_VERSION = "0.6.12";
+    const CADEN_VERSION = "0.6.13";
     const CADEN_CONFIG = {
         appId: "RCM",
         appVersion: (typeof APP_BUILD_META !== 'undefined' && APP_BUILD_META.appVersion) ? APP_BUILD_META.appVersion : (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown'),
         serverUrl: "https://caden.prasanti.com",
         wssUrl: "wss://caden.prasanti.com/v1/stream",
-        trialDays: 7,
+        trialDays: 30,
         logLevel: 2
     };
     const KEYS = {
@@ -287,13 +289,41 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{padding:12px;te
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-    window.storeSystemTelemetry = function(type, payload, level){ console.log('CADEN Telemetry:', type, payload); };
+    window.storeSystemTelemetry = function(type, payload, level) {
+        if (!navigator.onLine) return;
+        const devId = generateDeviceFingerprint();
+        fetch(CADEN_CONFIG.serverUrl + '/v1/telemetry', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                appId: CADEN_CONFIG.appId,
+                entries: [{
+                    epoch: Math.floor(Date.now()/1000),
+                    level: level || 2,
+                    type: type,
+                    detail: typeof payload === 'string' ? payload : JSON.stringify(payload),
+                    device: devId
+                }]
+            })
+        }).catch(()=>{});
+    };
     window.logCadenOperation = function(type, msg){ console.log('CADEN Log:', type, msg); };
 })();
+
+    // Activity-Based Heartbeat (v0.6.13)
+    let lastActivitySync = Date.now();
+    function handleUserActivity() {
+        const now = Date.now();
+        if (now - lastActivitySync > 60000) { // 60 seconds
+            if (navigator.onLine) syncProfile();
+            lastActivitySync = now;
+        }
+    }
+    ['keydown', 'mousemove', 'click', 'scroll'].forEach(evt => window.addEventListener(evt, handleUserActivity));
 </script>
 <!-- END CADEN LICENSING -->
 </head><body>
-<header><div class="brand"><svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;"><rect width="100" height="100" rx="20" fill="#0F172A"/><path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/><circle cx="50" cy="50" r="12" fill="none" stroke="#10B981" stroke-width="4"/><path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/></svg><h1>RCM Reliability Dashboard</h1><span class="version-badge">v0.9.19</span></div></header>
+<header><div class="brand"><svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;"><rect width="100" height="100" rx="20" fill="#0F172A"/><path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/><circle cx="50" cy="50" r="12" fill="none" stroke="#10B981" stroke-width="4"/><path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/></svg><h1>RCM Reliability Dashboard</h1><span class="version-badge">v0.9.20</span></div></header>
 <div id="app-container">
 <div id="view-diagram" class="view active"><div class="card">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;"><h2 style="margin:0;">System Overview</h2>
