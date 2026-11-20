@@ -26,8 +26,8 @@ def embed_data():
     m=re.search(r'v(\d+\.\d+\.\d+)',html);app=m.group(1) if m else "Unknown"
     src=get_excel_name();bdv=get_build_data_version()
     print(f"📄 App version: v{app} | Excel: {src} | build_data: {bdv}")
-    cv=re.search(r'const\s+CADEN_VERSION\s*=\s*["\']([^"\']+)["\']',html)
-    print(f"🔒 CADEN Licensing: v{cv.group(1)} detected." if cv else "⚠️ Warning: CADEN script missing.")
+    cv=re.search(r'<!-- START CADEN LOADER -->',html)
+    print("🔒 CADEN Loader detected." if cv else "⚠️ Warning: CADEN Loader missing.")
     data=open(DATA_FILE,encoding="utf-8").read().strip()
     b64=lambda x:base64.b64encode(x.encode('utf-8')).decode('utf-8')
     # whitespace-tolerant injection (handles both minified and spaced constants)
@@ -40,10 +40,38 @@ def embed_data():
     html=re.sub(r'\n\s*GOVERNANCE COMPONENT[^\n]*-->','',html,flags=re.IGNORECASE)
     html=re.sub(r'<script>\s*(window\.)?APP_BUILD_META.*?</script>\s*','',html,flags=re.DOTALL)
     meta=(f'<script>\n    window.APP_BUILD_META = {{\n        appVersion: "{app}",\n        buildDataVersion: "{bdv}",\n        embedDataVersion: "{EMBED_DATA_VERSION}",\n        sourceExcelFile: "{src}"\n    }};\n</script>\n')
-    if '<!-- START CADEN LICENSING' in html:
-        html=html.replace('<!-- START CADEN LICENSING',meta+'<!-- START CADEN LICENSING',1)
+    if '<!-- START CADEN LOADER' in html:
+        html=html.replace('<!-- START CADEN LOADER',meta+'<!-- START CADEN LOADER',1)
     else:
         html=html.replace('</head>',meta+'</head>',1)
     open(OUTPUT_FILE,"w",encoding="utf-8").write(html)
     print(f"✅ Success! {OUTPUT_FILE} created.")
 if __name__=="__main__":embed_data()
+
+
+# ==========================================
+# FINAL VERSION SUMMARY
+# ==========================================
+def get_ver(path, pattern):
+    if not os.path.exists(path): return "NOT FOUND"
+    content = open(path, encoding="utf-8").read()
+    m = re.search(pattern, content)
+    return m.group(1) if m else "Unknown"
+
+app_ver = get_ver("index.html", r'v0\.9\.(\d+)')
+build_ver = get_ver("build_data.py", r'Version:\s*(v[\d\.]+)')
+embed_ver = get_ver("embed_data.py", r'Version:\s*(v[\d\.]+)')
+integ_ver = get_ver("integrate_caden.py", r'Version:\s*(v[\d\.]+)')
+loader_ver = get_ver("caden_loader.txt", r'Loader\s*(v[\d\.]+)')
+excel_file = sys.argv[1] if len(sys.argv) > 1 else "Unknown"
+
+print("\n" + "="*60)
+print(" 📦 COMPONENT VERSIONS")
+print("="*60)
+print(f" App (index.html)      : v0.9.{app_ver}")
+print(f" build_data.py         : {build_ver}")
+print(f" embed_data.py         : {embed_ver}")
+print(f" integrate_caden.py    : {integ_ver}")
+print(f" caden_loader.txt      : {loader_ver}")
+print(f" Excel Data            : {excel_file}")
+print("="*60)

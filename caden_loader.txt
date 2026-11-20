@@ -1,0 +1,85 @@
+<!-- CADEN Loader v1.3 : fetches live script, caches for offline, includes robust cold-start fallback -->
+<script>
+(function(){
+  var KEY = 'caden_script_cache_v1';
+  var URL = 'https://caden.prasanti.com/caden_script.txt';
+  
+  function inject(t){
+    window.CADEN_LOADED = true;
+    var s = document.createElement('script');
+    s.textContent = t;
+    document.head.appendChild(s);
+  }
+  
+  var cached = localStorage.getItem(KEY);
+  if (cached) {
+    inject(cached); // Instant execution + offline support
+  } else {
+    // Cold-start offline fallback: minimal registration logic
+    window.CADEN_LOADED = true;
+    console.log('CADEN: Cold-start offline fallback activated.');
+
+    // FIX 2: Check if already registered locally before doing anything
+    var existingInfo = localStorage.getItem('RCM_USER_INFO');
+    var isRegistered = false;
+    if (existingInfo) {
+      try {
+        var parsed = JSON.parse(existingInfo);
+        if (parsed.name && parsed.name.length > 1 && parsed.expires_at) {
+          isRegistered = true;
+        }
+      } catch(e) {}
+    }
+
+    if (isRegistered) {
+      console.log('CADEN: Already registered locally. Dispatching CADEN_READY.');
+      window.dispatchEvent(new Event('CADEN_READY'));
+    } else {
+      // FIX 1: Defer DOM manipulation until body is guaranteed to exist
+      setTimeout(function() {
+        var localExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        var userInfo = { name: '', email: '', whatsapp: '', expires_at: localExpiry };
+
+        var modalHTML = '<div id="caden-reg-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:999999;font-family:sans-serif;">' +
+          '<div style="background:#1e293b;padding:2rem;border-radius:8px;width:90%;max-width:400px;color:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.5);">' +
+          '<h2 style="margin-top:0;text-align:center;">Initial Registration</h2>' +
+          '<form id="caden-reg-form">' +
+          '<input type="text" id="caden-reg-name" placeholder="Full Name" required style="width:100%;padding:0.75rem;margin-bottom:1rem;background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;box-sizing:border-box;">' +
+          '<input type="email" id="caden-reg-email" placeholder="Email Address" required style="width:100%;padding:0.75rem;margin-bottom:1rem;background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;box-sizing:border-box;">' +
+          '<input type="text" id="caden-reg-wa" placeholder="WhatsApp Number" required style="width:100%;padding:0.75rem;margin-bottom:1.5rem;background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;box-sizing:border-box;">' +
+          '<button type="submit" style="width:100%;padding:0.75rem;background:#3b82f6;color:#fff;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">Register & Continue</button>' +
+          '</form></div></div>';
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        document.getElementById('caden-reg-form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          userInfo.name = document.getElementById('caden-reg-name').value;
+          userInfo.email = document.getElementById('caden-reg-email').value;
+          userInfo.whatsapp = document.getElementById('caden-reg-wa').value;
+          localStorage.setItem('RCM_USER_INFO', JSON.stringify(userInfo));
+
+          document.getElementById('caden-reg-modal').style.display = 'none';
+          window.dispatchEvent(new Event('CADEN_READY'));
+          console.log('CADEN: Fallback registration complete. CADEN_READY dispatched.');
+        });
+      }, 0);
+    }
+  }
+  
+  // Always attempt to fetch in background to update cache for next time
+  fetch(URL, { cache: 'no-store' })
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      localStorage.setItem(KEY, t);
+      if (!cached) {
+        // If we were in fallback mode, inject the real script now that it's fetched.
+        // The main script will read the existing RCM_USER_INFO and merge/update seamlessly.
+        inject(t);
+      }
+    })
+    .catch(function(e){
+      // Offline: keep using fallback silently
+    });
+})();
+</script>

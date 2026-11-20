@@ -1,7 +1,7 @@
-<!-- Version: v0.9.20 -->
+<!-- Version: v0.10.0 -->
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RCM Reliability Dashboard v0.9.20</title>
+<title>RCM Reliability Dashboard v0.10.0</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F172A'/%3E%3Cpath d='M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z' fill='%231E293B' stroke='%233B82F6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%2310B981' stroke-width='4'/%3E%3Cpath d='M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34' stroke='%2310B981' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <script src="crypto-js.min.js"></script><script src="chart.umd.js"></script>
 <style>
@@ -76,254 +76,156 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{padding:12px;te
 
 
 
-<!-- START CADEN LICENSING -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- CADEN_READY Listener (Native Reveal) -->
 <script>
-(function () {
-    const CADEN_VERSION = "0.6.13";
-    const CADEN_CONFIG = {
-        appId: "RCM",
-        appVersion: (typeof APP_BUILD_META !== 'undefined' && APP_BUILD_META.appVersion) ? APP_BUILD_META.appVersion : (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'Unknown'),
-        serverUrl: "https://caden.prasanti.com",
-        wssUrl: "wss://caden.prasanti.com/v1/stream",
-        trialDays: 30,
-        logLevel: 2
-    };
-    const KEYS = {
-        token: 'RCM_AUTH_TOKEN',
-        userInfo: 'RCM_USER_INFO',
-        genesis: 'RCM_GENESIS',
-        pendingReg: 'RCM_PENDING_REG'
-    };
-
-    function generateDeviceFingerprint() {
-        try {
-            const parts = [];
-            parts.push('W:' + screen.width);
-            parts.push('H:' + screen.height);
-            parts.push('CPU:' + (navigator.hardwareConcurrency || 0));
-            parts.push('RAM:' + (navigator.deviceMemory || 0));
-            parts.push('TZ:' + (Intl.DateTimeFormat().resolvedOptions().timeZone || ''));
-            try {
-                const c = document.createElement('canvas');
-                const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
-                if (gl) { const d = gl.getExtension('WEBGL_debug_renderer_info'); if (d) parts.push('GPU:' + gl.getParameter(d.UNMASKED_RENDERER_WEBGL)); }
-            } catch(e) {}
-            const combined = parts.join('|'); let hash = 0;
-            for (let i = 0; i < combined.length; i++) { hash = ((hash << 5) - hash) + combined.charCodeAt(i); hash |= 0; }
-            const prefix = CADEN_CONFIG.appId.split('_')[0].toUpperCase();
-            return prefix + "-" + Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
-        } catch (e) { return "RCM-GENERIC-00000000"; }
+(function(){
+  function doReveal() {
+    console.log('Dashboard: Triggering native reveal...');
+    
+    // 1. Call native revealApp(true). 
+    // This sets cadenInitialized=true, calls ensureCore() to start decryption,
+    // shows the app container, and safely starts the intro video exactly once.
+    if (typeof window.revealApp === 'function') {
+      window.revealApp(true);
     }
-
-    function collectSystemInfo() {
-        const info = {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            cpuCores: navigator.hardwareConcurrency || 0,
-            deviceMemory: navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Unknown',
-            screenRes: screen.width + 'x' + screen.height,
-            timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || ''),
-            webglRenderer: (function(){ try { const c=document.createElement('canvas'); const gl=c.getContext('webgl')||c.getContext('experimental-webgl'); const d=gl&&gl.getExtension('WEBGL_debug_renderer_info'); return d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL):''; } catch(e){ return ''; } })(),
-            appVersion: CADEN_CONFIG.appVersion,
-            cadenVersion: CADEN_VERSION
-        };
-        if (typeof APP_BUILD_META !== 'undefined') {
-            info.buildDataVersion = APP_BUILD_META.buildDataVersion || 'Unknown';
-            info.embedDataVersion = APP_BUILD_META.embedDataVersion || 'Unknown';
-            info.sourceExcelFile = APP_BUILD_META.sourceExcelFile || 'Unknown';
-        }
-        return info;
+    
+    // 2. Start footer polling
+    if (typeof startCADENFooterPolling === 'function') {
+      startCADENFooterPolling();
     }
+  }
 
-    function syncProfile() {
-        try {
-            const payload = { deviceId: generateDeviceFingerprint(), systemInfo: collectSystemInfo() };
-            fetch(CADEN_CONFIG.serverUrl + '/v1/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function(){});
-        } catch(e) {}
+  window.addEventListener('CADEN_READY', function(){
+    console.log('Dashboard: CADEN_READY received.');
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', doReveal);
+    } else {
+      doReveal();
     }
-
-    function executeLockdownScreen(reason) {
-        let overlay = document.getElementById('caden-lockdown-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'caden-lockdown-overlay';
-            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0f172a;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-family:sans-serif;';
-            document.body.appendChild(overlay);
-        }
-        overlay.innerHTML = '<div style="background:#1e293b;padding:2rem;border-radius:8px;text-align:center;max-width:400px;"><h2 style="color:#ef4444;margin-bottom:1rem;">CADEN Governance Lockdown</h2><p style="margin-bottom:1rem;">' + reason + '</p><p style="font-size:0.8rem;color:#94a3b8;">Device ID: ' + generateDeviceFingerprint() + ' | Script v' + CADEN_VERSION + '</p></div>';
-        document.body.querySelectorAll(':not(#caden-lockdown-overlay)').forEach(function(el){ if(el.parentNode) el.style.display='none'; });
-        document.body.appendChild(overlay);
-    }
-
-    function revealApp() {
-        const overlay = document.getElementById('caden-lockdown-overlay'); if (overlay) overlay.remove();
-        const modal = document.getElementById('caden-reg-modal'); if (modal) modal.style.display = 'none';
-        document.body.querySelectorAll('[style*="display: none"]').forEach(function(el){ if (el.id !== 'caden-lockdown-overlay') el.style.display = ''; });
-        window.dispatchEvent(new CustomEvent('CADEN_READY'));
-        window.cadenInitialized = true;
-    }
-
-    function showRegistrationModal() {
-        let modal = document.getElementById('caden-reg-modal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'caden-reg-modal';
-            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:999998;display:flex;align-items:center;justify-content:center;';
-            document.body.appendChild(modal);
-        }
-        modal.innerHTML = '<div style="background:#fff;padding:2rem;border-radius:8px;width:300px;color:#000;"><h3 style="margin-top:0;">CADEN Registration</h3><input id="caden-reg-name" placeholder="Full Name" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;"><input id="caden-reg-email" placeholder="Email" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;"><input id="caden-reg-wa" placeholder="WhatsApp" style="width:100%;margin-bottom:10px;padding:8px;box-sizing:border-box;"><button id="caden-reg-submit" style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;">Activate</button></div>';
-        modal.style.display = 'flex';
-        document.getElementById('caden-reg-submit').onclick = async function () {
-            const name = document.getElementById('caden-reg-name').value;
-            const email = document.getElementById('caden-reg-email').value;
-            const wa = document.getElementById('caden-reg-wa').value;
-            if (!name) return alert('Name required');
-            const devId = generateDeviceFingerprint();
-            const userInfoObj = { name: name, email: email, whatsapp: wa };
-            console.log('CADEN: Saving initial userInfo to localStorage:', userInfoObj);
-            localStorage.setItem(KEYS.userInfo, JSON.stringify(userInfoObj));
-            localStorage.setItem(KEYS.genesis, Date.now().toString());
-            const url = CADEN_CONFIG.serverUrl + '/v1/activate?appId=' + CADEN_CONFIG.appId + '&deviceId=' + devId + '&ownerName=' + encodeURIComponent(name) + '&ownerEmail=' + encodeURIComponent(email) + '&ownerWhatsapp=' + encodeURIComponent(wa);
-            try {
-                const res = await fetch(url, { method: 'POST' });
-                const data = await res.json();
-                if (res.ok && data.token) {
-                    localStorage.setItem(KEYS.token, data.token);
-                    localStorage.removeItem(KEYS.pendingReg);
-                    syncProfile();
-                    modal.remove(); revealApp();
-                } else {
-                    console.warn('CADEN: server rejected registration, proceeding offline.');
-                    localStorage.setItem(KEYS.pendingReg, JSON.stringify({ url: url, method: 'POST' }));
-                    modal.remove(); revealApp();
-                }
-            } catch (e) {
-                console.warn('CADEN: network error, proceeding offline.');
-                localStorage.setItem(KEYS.pendingReg, JSON.stringify({ url: url, method: 'POST' }));
-                modal.remove(); revealApp();
-            }
-        };
-    }
-
-    async function autoActivate() {
-        const token = localStorage.getItem(KEYS.token);
-        const devId = generateDeviceFingerprint();
-        const userInfo = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-        const url = CADEN_CONFIG.serverUrl + '/v1/activate?appId=' + CADEN_CONFIG.appId + '&deviceId=' + devId + '&ownerName=' + encodeURIComponent(userInfo.name||'') + '&ownerEmail=' + encodeURIComponent(userInfo.email||'') + '&ownerWhatsapp=' + encodeURIComponent(userInfo.whatsapp||'');
-        try {
-            const res = await fetch(url, { method: 'POST' });
-            const data = await res.json();
-            if (!res.ok) { if (data.detail === 'Device Revoked') executeLockdownScreen('License has been revoked by administrator.'); return; }
-            const now = Math.floor(Date.now() / 1000);
-            if (data.status === 'REVOKED') { executeLockdownScreen('License has been revoked.'); return; }
-            if (data.expires_at) { const expDate = new Date(data.expires_at).getTime() / 1000; if (expDate < (now - 300)) { executeLockdownScreen('License has expired.'); return; } }
-            
-            // HARDENED MERGE: Only update if server provides data, preserving existing fields
-            if (data.owner_name || data.owner_email || data.owner_whatsapp) {
-                const ci = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-                if (data.owner_name) ci.name = data.owner_name;
-                if (data.owner_email) ci.email = data.owner_email;
-                if (data.owner_whatsapp) ci.whatsapp = data.owner_whatsapp;
-                console.log('CADEN: Merging server userInfo into localStorage:', ci);
-                localStorage.setItem(KEYS.userInfo, JSON.stringify(ci));
-            }
-            
-            if (data.token) localStorage.setItem(KEYS.token, data.token);
-            syncProfile();
-            revealApp();
-        } catch (e) { console.error('CADEN activation error:', e); if (token) revealApp(); }
-    }
-
-    function attemptPendingRegistration() {
-        const pending = localStorage.getItem(KEYS.pendingReg);
-        if (!pending || !navigator.onLine) return;
-        try {
-            const req = JSON.parse(pending);
-            fetch(req.url, { method: req.method }).then(function(res){ return res.json(); }).then(function(data){
-                if (data.token) { 
-                    localStorage.setItem(KEYS.token, data.token); 
-                    localStorage.removeItem(KEYS.pendingReg); 
-                    // HARDENED MERGE for offline sync
-                    if (data.owner_name || data.owner_email || data.owner_whatsapp) {
-                        const ci = JSON.parse(localStorage.getItem(KEYS.userInfo) || '{}');
-                        if (data.owner_name) ci.name = data.owner_name;
-                        if (data.owner_email) ci.email = data.owner_email;
-                        if (data.owner_whatsapp) ci.whatsapp = data.owner_whatsapp;
-                        console.log('CADEN: Merging server userInfo after offline sync:', ci);
-                        localStorage.setItem(KEYS.userInfo, JSON.stringify(ci));
-                    }
-                    syncProfile(); 
-                    console.log('CADEN: offline registration synced successfully.'); 
-                    // Trigger autoActivate to ensure full state is synced and last_seen_at is updated
-                    autoActivate();
-                }
-            }).catch(function(e){ console.log('CADEN: pending registration retry failed.', e); });
-        } catch(e) {}
-    }
-
-    window.addEventListener('online', function(){ attemptPendingRegistration(); autoActivate(); });
-    setInterval(function(){ if (navigator.onLine) attemptPendingRegistration(); }, 5 * 60 * 1000);
-
-    function init() {
-        const badge = document.createElement('div');
-        badge.style.cssText = 'position:fixed;top:10px;right:10px;background:#1e293b;color:#fff;padding:5px 10px;border-radius:4px;font-size:10px;z-index:999999;font-family:sans-serif;';
-        badge.innerHTML = '🛡️ Protected by CADEN<br>ID: ' + generateDeviceFingerprint();
-        document.body.appendChild(badge);
-        
-        const token = localStorage.getItem(KEYS.token);
-        const hasGenesis = localStorage.getItem(KEYS.genesis);
-        const hasUserInfo = localStorage.getItem(KEYS.userInfo);
-        
-        if (!token && !hasGenesis && !hasUserInfo) { 
-            showRegistrationModal(); 
-        } else { 
-            autoActivate(); 
-        }
-        
-        // GUARANTEE: Always sync profile on online load, independently of the activation path
-        if (navigator.onLine) {
-            syncProfile();
-            attemptPendingRegistration();
-        }
-    }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-
-    window.storeSystemTelemetry = function(type, payload, level) {
-        if (!navigator.onLine) return;
-        const devId = generateDeviceFingerprint();
-        fetch(CADEN_CONFIG.serverUrl + '/v1/telemetry', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                appId: CADEN_CONFIG.appId,
-                entries: [{
-                    epoch: Math.floor(Date.now()/1000),
-                    level: level || 2,
-                    type: type,
-                    detail: typeof payload === 'string' ? payload : JSON.stringify(payload),
-                    device: devId
-                }]
-            })
-        }).catch(()=>{});
-    };
-    window.logCadenOperation = function(type, msg){ console.log('CADEN Log:', type, msg); };
+  });
 })();
-
-    // Activity-Based Heartbeat (v0.6.13)
-    let lastActivitySync = Date.now();
-    function handleUserActivity() {
-        const now = Date.now();
-        if (now - lastActivitySync > 60000) { // 60 seconds
-            if (navigator.onLine) syncProfile();
-            lastActivitySync = now;
-        }
-    }
-    ['keydown', 'mousemove', 'click', 'scroll'].forEach(evt => window.addEventListener(evt, handleUserActivity));
 </script>
-<!-- END CADEN LICENSING -->
+
+<!-- START CADEN LOADER -->
+<!-- CADEN Loader v1.3 : fetches live script, caches for offline, includes robust cold-start fallback -->
+<script>
+(function(){
+  var KEY = 'caden_script_cache_v1';
+  var URL = 'https://caden.prasanti.com/caden_script.txt';
+  
+  function inject(t){
+    window.CADEN_LOADED = true;
+    var s = document.createElement('script');
+    s.textContent = t;
+    document.head.appendChild(s);
+  }
+  
+  var cached = localStorage.getItem(KEY);
+  if (cached) {
+    inject(cached); // Instant execution + offline support
+  } else {
+    // Cold-start offline fallback: minimal registration logic
+    window.CADEN_LOADED = true;
+    console.log('CADEN: Cold-start offline fallback activated.');
+
+    // FIX 2: Check if already registered locally before doing anything
+    var existingInfo = localStorage.getItem('RCM_USER_INFO');
+    var isRegistered = false;
+    if (existingInfo) {
+      try {
+        var parsed = JSON.parse(existingInfo);
+        if (parsed.name && parsed.name.length > 1 && parsed.expires_at) {
+          isRegistered = true;
+        }
+      } catch(e) {}
+    }
+
+    if (isRegistered) {
+      console.log('CADEN: Already registered locally. Dispatching CADEN_READY.');
+      window.dispatchEvent(new Event('CADEN_READY'));
+    } else {
+      // FIX 1: Defer DOM manipulation until body is guaranteed to exist
+      setTimeout(function() {
+        var localExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        var userInfo = { name: '', email: '', whatsapp: '', expires_at: localExpiry };
+
+        var modalHTML = '<div id="caden-reg-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:999999;font-family:sans-serif;">' +
+          '<div style="background:#1e293b;padding:2rem;border-radius:8px;width:90%;max-width:400px;color:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.5);">' +
+          '<h2 style="margin-top:0;text-align:center;">Initial Registration</h2>' +
+          '<form id="caden-reg-form">' +
+          '<input type="text" id="caden-reg-name" placeholder="Full Name" required style="width:100%;padding:0.75rem;margin-bottom:1rem;background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;box-sizing:border-box;">' +
+          '<input type="email" id="caden-reg-email" placeholder="Email Address" required style="width:100%;padding:0.75rem;margin-bottom:1rem;background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;box-sizing:border-box;">' +
+          '<input type="text" id="caden-reg-wa" placeholder="WhatsApp Number" required style="width:100%;padding:0.75rem;margin-bottom:1.5rem;background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;box-sizing:border-box;">' +
+          '<button type="submit" style="width:100%;padding:0.75rem;background:#3b82f6;color:#fff;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">Register & Continue</button>' +
+          '</form></div></div>';
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        document.getElementById('caden-reg-form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          userInfo.name = document.getElementById('caden-reg-name').value;
+          userInfo.email = document.getElementById('caden-reg-email').value;
+          userInfo.whatsapp = document.getElementById('caden-reg-wa').value;
+          localStorage.setItem('RCM_USER_INFO', JSON.stringify(userInfo));
+
+          document.getElementById('caden-reg-modal').style.display = 'none';
+          window.dispatchEvent(new Event('CADEN_READY'));
+          console.log('CADEN: Fallback registration complete. CADEN_READY dispatched.');
+        });
+      }, 0);
+    }
+  }
+  
+  // Always attempt to fetch in background to update cache for next time
+  fetch(URL, { cache: 'no-store' })
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      localStorage.setItem(KEY, t);
+      if (!cached) {
+        // If we were in fallback mode, inject the real script now that it's fetched.
+        // The main script will read the existing RCM_USER_INFO and merge/update seamlessly.
+        inject(t);
+      }
+    })
+    .catch(function(e){
+      // Offline: keep using fallback silently
+    });
+})();
+</script>
+<!-- END CADEN LOADER -->
 </head><body>
-<header><div class="brand"><svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;"><rect width="100" height="100" rx="20" fill="#0F172A"/><path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/><circle cx="50" cy="50" r="12" fill="none" stroke="#10B981" stroke-width="4"/><path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/></svg><h1>RCM Reliability Dashboard</h1><span class="version-badge">v0.9.20</span></div></header>
+<header><div class="brand"><svg width="32" height="32" viewBox="0 0 100 100" style="flex-shrink:0;"><rect width="100" height="100" rx="20" fill="#0F172A"/><path d="M50 15 L80 25 L80 50 C80 70 50 85 50 85 C50 85 20 70 20 50 L20 25 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="3" stroke-linejoin="round"/><circle cx="50" cy="50" r="12" fill="none" stroke="#10B981" stroke-width="4"/><path d="M50 32 L50 28 M50 72 L50 68 M32 50 L28 50 M72 50 L68 50 M37 37 L34 34 M63 63 L66 66 M37 63 L34 66 M63 37 L66 34" stroke="#10B981" stroke-width="4" stroke-linecap="round"/></svg><h1>RCM Reliability Dashboard</h1><span class="version-badge">v0.10.0</span></div></header>
 <div id="app-container">
 <div id="view-diagram" class="view active"><div class="card">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;"><h2 style="margin:0;">System Overview</h2>
@@ -399,13 +301,13 @@ const frTheme=JSON.parse(JSON.stringify(darkTheme));frTheme.scales.y.title.text=
 chartFR=new Chart(document.getElementById('chart-failurerate').getContext('2d'),{type:'line',data:{datasets:[{label:'Failure Rate',data:fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})),borderColor:'#00BFFF',borderWidth:2,tension:0.4,pointRadius:0,fill:false},{label:'Ongoing',data:[{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}],borderColor:'#FFFF00',borderDash:[5,5],borderWidth:1.5,pointRadius:0,showLine:true,fill:false},{label:'Ongoing Marker',data:[{x:ed,y:cFR}],pointStyle:'rectRot',pointBackgroundColor:'#FFFF00',pointRadius:6,showLine:false}]},options:{...frTheme,scales:{...frTheme.scales,x:{...frTheme.scales.x,type:'logarithmic',min:1},y:{...frTheme.scales.y,min:0}}}});}
 function updateCurrentDayLines(){if(!chartRel||!chartFR||!appData)return;const fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];const ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);const cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);const cFR=getValueAtDay(fm.days,fm.failureRateData,ed);if(chartRel.data.datasets[1])chartRel.data.datasets[1].data=[{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:0}];if(chartRel.data.datasets[2])chartRel.data.datasets[2].data=[{x:ed,y:cRel}];chartRel.update('none');if(chartFR.data.datasets[1])chartFR.data.datasets[1].data=[{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}];if(chartFR.data.datasets[2])chartFR.data.datasets[2].data=[{x:ed,y:cFR}];chartFR.update('none');}
 function updateUI(){if(document.getElementById('view-diagram').classList.contains('active'))updateDiagramColors();else if(document.getElementById('view-table').classList.contains('active'))renderTable(currentComponentId);}
-function startCADENFooterPolling(){var tries=0,MAX=30,dumped=false;function findUser(){var raw=localStorage.getItem('RCM_USER_INFO')||localStorage.getItem('RCM_DASHBOARD_USER_INFO');if(raw){try{var u=JSON.parse(raw);if(u&&u.name&&u.name.length>1)return u.name;}catch(e){}}return null;}function decodeExp(tok){try{var p=tok.split('.')[1];p=p.replace(/-/g,'+').replace(/_/g,'/');while(p.length%4)p+='=';var json=decodeURIComponent(atob(p).split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);}).join(''));var pl=JSON.parse(json);return pl&&pl.exp?new Date(pl.exp*1000).toLocaleString():null;}catch(e){return null;}}function findExpiry(){var tok=localStorage.getItem('RCM_AUTH_TOKEN')||localStorage.getItem('RCM_DASHBOARD_AUTH_TOKEN');if(tok){var e=decodeExp(tok);if(e)return e;}for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);var v=localStorage.getItem(k);if(v&&v.length>20&&v.indexOf('eyJ')===0&&v.split('.').length===3){var e2=decodeExp(v);if(e2)return e2;}}try{var gb=JSON.parse(localStorage.getItem('RCM_GENESIS_BUNCH')||'{}');var td=parseInt(localStorage.getItem('RCM_SERVER_TRIAL_DAYS')||'0',10);if(gb&&gb.genesisEpoch&&td>0)return new Date(gb.genesisEpoch+td*86400000).toLocaleString();}catch(e){}return null;}function render(){var name=findUser(),exp=findExpiry();var nEl=document.getElementById('footer-user-name');var eEl=document.getElementById('footer-license-expiry');if(nEl&&name)nEl.innerText=name;if(eEl&&exp)eEl.innerText=exp;if(!dumped){console.log('CADEN footer | user:',name,'| expiry:',exp);dumped=true;}if(name&&exp){clearInterval(iv);}else if(++tries>=MAX){clearInterval(iv);}}render();var iv=setInterval(render,1000);}
+function startCADENFooterPolling(){var tries=0,MAX=30,dumped=false;function findUser(){var raw=localStorage.getItem('RCM_USER_INFO')||localStorage.getItem('RCM_DASHBOARD_USER_INFO');if(raw){try{var u=JSON.parse(raw);if(u&&(u.owner_name||u.name)){var n=u.owner_name||u.name;if(n.length>1)return n;}}catch(e){}}return null;}function decodeExp(tok){try{var p=tok.split('.')[1];p=p.replace(/-/g,'+').replace(/_/g,'/');while(p.length%4)p+='=';var json=decodeURIComponent(atob(p).split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2);}).join(''));var pl=JSON.parse(json);return pl&&pl.exp?new Date(pl.exp*1000).toLocaleString():null;}catch(e){return null;}}function findExpiry(){var raw=localStorage.getItem('RCM_USER_INFO')||localStorage.getItem('RCM_DASHBOARD_USER_INFO');if(raw){try{var u=JSON.parse(raw);if(u&&u.expires_at){var d=new Date(u.expires_at);if(!isNaN(d))return d.toLocaleString();return u.expires_at;}}catch(e){}}var tok=localStorage.getItem('RCM_AUTH_TOKEN')||localStorage.getItem('RCM_DASHBOARD_AUTH_TOKEN');if(tok){var e=decodeExp(tok);if(e)return e;}for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);var v=localStorage.getItem(k);if(v&&v.length>20&&v.indexOf('eyJ')===0&&v.split('.').length===3){var e2=decodeExp(v);if(e2)return e2;}}try{var gb=JSON.parse(localStorage.getItem('RCM_GENESIS_BUNCH')||'{}');var td=parseInt(localStorage.getItem('RCM_SERVER_TRIAL_DAYS')||'0',10);if(gb&&gb.genesisEpoch&&td>0)return new Date(gb.genesisEpoch+td*86400000).toLocaleString();}catch(e){}return null;}function render(){var name=findUser(),exp=findExpiry();var nEl=document.getElementById('footer-user-name');var eEl=document.getElementById('footer-license-expiry');if(nEl&&name)nEl.innerText=name;if(eEl&&exp)eEl.innerText=exp;if(!dumped){console.log('CADEN footer | user:',name,'| expiry:',exp);dumped=true;}if(name&&exp){clearInterval(iv);}else if(++tries>=MAX){clearInterval(iv);}}render();var iv=setInterval(render,1000);}
 window.startIntroVideo=function(){var overlay=document.getElementById('intro-overlay');var video=document.getElementById('intro-video');var skip=document.getElementById('skip-btn');var start=document.getElementById('start-btn');var app=document.getElementById('app-container');if(!overlay||!video||!app)return;var started=false,done=false,safety=null;function revealApp(){if(done)return;done=true;if(safety)clearTimeout(safety);overlay.classList.remove('fade');setTimeout(function(){overlay.classList.remove('show');app.classList.add('visible');if(window.positionHandles)window.positionHandles();},1000);}function begin(){if(started||done)return;started=true;overlay.classList.add('show');requestAnimationFrame(function(){requestAnimationFrame(function(){overlay.classList.add('fade');});});video.muted=false;var p=video.play();if(p&&p.catch){p.catch(function(){start.style.display='block';});p.then(function(){if(video.muted){video.pause();start.style.display='block';}});}video.addEventListener('ended',revealApp);video.addEventListener('error',revealApp);safety=setTimeout(revealApp,60000);}skip.addEventListener('click',revealApp);overlay.addEventListener('click',function(e){if(e.target===overlay)revealApp();});start.addEventListener('click',function(){start.style.display='none';video.muted=false;var p=video.play();if(p&&p.catch)p.catch(function(){});});begin();};
 function ensureCore(){if(window._coreReady)return;window._coreReady=true;if(typeof EMBEDDED_DATA!=='undefined'&&EMBEDDED_DATA){try{var pwd=atob(EMBEDDED_PWD_B64);var dec=CryptoJS.AES.decrypt(EMBEDDED_DATA,pwd).toString(CryptoJS.enc.Utf8);if(dec){appData=JSON.parse(dec);document.getElementById('day-slider').max=appData.maxDays||365;document.getElementById('global-slider').style.display='flex';updateDiagramColors();}}catch(err){console.error("Auto-load failed:",err);}}startCADENFooterPolling();}
 function revealApp(shouldPlayIntro){if(window.cadenInitialized)return;window.cadenInitialized=true;console.log("RCM App: Initializing...");ensureCore();var app=document.getElementById('app-container');if(app){app.style.display='block';setTimeout(()=>app.classList.add('visible'),50);}if(shouldPlayIntro&&window.startIntroVideo){window.startIntroVideo();}else{if(window.positionHandles)setTimeout(window.positionHandles,100);}}
 function initRCMApp(){console.log("RCM App: CADEN_READY received.");revealApp(true);}
 window.addEventListener('CADEN_READY',initRCMApp);
-setTimeout(function(){if(!window.cadenInitialized){console.warn("CADEN fallback (15s): revealing app WITHOUT intro.");revealApp(false);}},15000);
+
 var QM=(function(){var grid=document.getElementById('quad-grid');if(!grid)return{};var DEF={rows:'1fr 2.4fr',cols:'1fr 1fr'};var h=document.createElement('div');h.className='resize-handle resize-h';h.dataset.dir='row';var v=document.createElement('div');v.className='resize-handle resize-v';v.dataset.dir='col';grid.appendChild(h);grid.appendChild(v);var layoutModified=false;function applySaved(){var s=localStorage.getItem('quad-layout');if(s){try{var l=JSON.parse(s);grid.style.gridTemplateRows=l.rows;grid.style.gridTemplateColumns=l.cols;layoutModified=true;showResetBtn();}catch(e){}}}function position(){var g=grid.getBoundingClientRect();if(g.width===0)return;var q2=grid.querySelector('.q2').getBoundingClientRect();var q3=grid.querySelector('.q3').getBoundingClientRect();h.style.top=(q3.top-g.top-3)+'px';v.style.left=(q2.left-g.left-3)+'px';}function setRows(p){p=Math.max(15,Math.min(45,p));grid.style.gridTemplateRows=p+'% '+(100-p)+'%';}function setCols(p){p=Math.max(20,Math.min(80,p));grid.style.gridTemplateColumns=p+'% '+(100-p)+'%';}function showResetBtn(){document.getElementById('reset-layout-btn').classList.add('visible');}var drag=null;function startDrag(e,dir){drag={dir:dir};e.preventDefault();(dir==='row'?h:v).classList.add('active');document.body.style.userSelect='none';}h.addEventListener('mousedown',function(e){startDrag(e,'row');});v.addEventListener('mousedown',function(e){startDrag(e,'col');});document.addEventListener('mousemove',function(e){if(!drag)return;var g=grid.getBoundingClientRect();if(drag.dir==='row'){setRows(((e.clientY-g.top)/g.height)*100);}else{setCols(((e.clientX-g.left)/g.width)*100);}position();if(chartRel)chartRel.resize();if(chartFR)chartFR.resize();layoutModified=true;showResetBtn();});document.addEventListener('mouseup',function(){if(!drag)return;h.classList.remove('active');v.classList.remove('active');document.body.style.userSelect='';localStorage.setItem('quad-layout',JSON.stringify({rows:grid.style.gridTemplateRows,cols:grid.style.gridTemplateColumns}));drag=null;});window.resetQuadrantLayout=function(){grid.style.gridTemplateRows=DEF.rows;grid.style.gridTemplateColumns=DEF.cols;localStorage.removeItem('quad-layout');layoutModified=false;document.getElementById('reset-layout-btn').classList.remove('visible');position();if(chartRel)chartRel.resize();if(chartFR)chartFR.resize();};window.positionHandles=position;window.addEventListener('resize',position);applySaved();return{position:position};})();
 var zoomChartType=null;window.openChartZoom=function(type){if(!appData||!currentComponentId||currentFailureModeIndex===null)return;var modal=document.getElementById('chart-zoom-modal');var canvas=document.getElementById('zoom-chart-canvas');var zs=document.getElementById('zoom-day-slider');var zv=document.getElementById('zoom-day-value');modal.classList.add('show');zoomChartType=type;zs.max=document.getElementById('day-slider').max;zs.value=currentDay;zv.innerText=currentDay;zs.oninput=function(e){currentDay=parseInt(e.target.value);document.getElementById('day-slider').value=currentDay;document.getElementById('day-value').innerText=currentDay;zv.innerText=currentDay;try{updateCurrentDayLines();updateZoomChart();}catch(err){}updateDiagramColors();};if(chartZoom)chartZoom.destroy();var fm=appData.components[currentComponentId].failureModes[currentFailureModeIndex];var ed=getEffectiveDay(currentDay,currentComponentId,currentFailureModeIndex);var cRel=getValueAtDay(fm.days,fm.reliabilityData,ed);var cFR=getValueAtDay(fm.days,fm.failureRateData,ed);let targetRt=parseFloat(fm.targetRt)||99.0,targetDay=parseFloat(fm.targetDay);const maxDays=Math.max(...fm.days);const yMin=(fm.chartYMin!=null)?fm.chartYMin:0;const yMax=100+(100-yMin)*0.2;if(!targetDay||isNaN(targetDay)||targetDay>=maxDays*0.99){for(let i=0;i<fm.reliabilityData.length-1;i++){if(fm.reliabilityData[i]>=targetRt&&fm.reliabilityData[i+1]<targetRt){const f=(targetRt-fm.reliabilityData[i])/(fm.reliabilityData[i+1]-fm.reliabilityData[i]);targetDay=fm.days[i]+f*(fm.days[i+1]-fm.days[i]);break;}}}const hasActualData=fm.actualData&&fm.actualData.length>0;const zoomTheme={responsive:true,maintainAspectRatio:false,color:'#FFFFFF',plugins:{title:{display:true,text:fm.name,color:'#FFFFFF',font:{size:18,weight:'bold',family:"'Segoe UI',sans-serif"},padding:{top:20,bottom:20}},legend:{display:false}},scales:{x:{grid:{color:'#444444',lineWidth:1},ticks:{color:'#FFFFFF',font:{size:11}},title:{display:true,text:'Next x days (hari)',color:'#FFFFFF',font:{size:13,weight:'bold'}}},y:{grid:{color:'#444444',lineWidth:1},ticks:{color:'#FFFFFF',font:{size:11}},title:{display:true,text:type==='reliability'?'R(t) - %':'Failure Rate',color:'#FFFFFF',font:{size:13,weight:'bold'}}}}};var datasets;if(type==='reliability'){datasets=[{label:'Reliability Curve',data:fm.days.map((d,i)=>({x:d,y:fm.reliabilityData[i]})),borderColor:'#00BFFF',borderWidth:2,tension:0.4,pointRadius:0,fill:false},{label:'Ongoing',data:[{x:1,y:cRel},{x:ed,y:cRel},{x:ed,y:yMin}],borderColor:'#FFFF00',borderDash:[5,5],borderWidth:1.5,pointRadius:0,showLine:true,fill:false},{label:'Ongoing Marker',data:[{x:ed,y:cRel}],pointStyle:'rectRot',pointBackgroundColor:'#FFFF00',pointRadius:8,showLine:false},{label:'Alarm',data:[{x:1,y:targetRt},{x:targetDay,y:targetRt},{x:targetDay,y:yMin}],borderColor:'#FF0000',borderDash:[5,5],borderWidth:3,pointRadius:0,showLine:true,fill:false},{label:'Alarm Marker',data:[{x:targetDay,y:targetRt}],pointStyle:'crossRot',pointBackgroundColor:'#FF0000',pointBorderColor:'#FF0000',pointRadius:10,showLine:false}];if(hasActualData)datasets.push({label:'Failure event',data:fm.actualData,backgroundColor:'#FFFFFF',pointRadius:5,showLine:false});chartZoom=new Chart(canvas.getContext('2d'),{type:'line',data:{datasets:datasets},options:{...zoomTheme,scales:{...zoomTheme.scales,x:{...zoomTheme.scales.x,type:'logarithmic',min:1,max:fm.chartXMax||maxDays},y:{...zoomTheme.scales.y,min:yMin,max:yMax}}}});}else{datasets=[{label:'Failure Rate',data:fm.days.map((d,i)=>({x:d,y:fm.failureRateData[i]})),borderColor:'#00BFFF',borderWidth:2,tension:0.4,pointRadius:0,fill:false},{label:'Ongoing',data:[{x:0,y:cFR},{x:ed,y:cFR},{x:ed,y:0}],borderColor:'#FFFF00',borderDash:[5,5],borderWidth:1.5,pointRadius:0,showLine:true,fill:false},{label:'Ongoing Marker',data:[{x:ed,y:cFR}],pointStyle:'rectRot',pointBackgroundColor:'#FFFF00',pointRadius:8,showLine:false}];chartZoom=new Chart(canvas.getContext('2d'),{type:'line',data:{datasets:datasets},options:{...zoomTheme,scales:{...zoomTheme.scales,x:{...zoomTheme.scales.x,type:'logarithmic',min:1},y:{...zoomTheme.scales.y,min:0}}}});}setTimeout(function(){if(chartZoom)chartZoom.resize();updateZoomLegend();},300);};
 window.closeChartZoom=function(){var modal=document.getElementById('chart-zoom-modal');modal.classList.remove('show');if(chartZoom){chartZoom.destroy();chartZoom=null;}};
@@ -414,4 +316,5 @@ function updateZoomLegend(){var lg=document.getElementById('zoom-legend');if(!lg
 function syncZoomSlider(){var zs=document.getElementById('zoom-day-slider');if(zs)zs.value=currentDay;var zv=document.getElementById('zoom-day-value');if(zv)zv.innerText=currentDay;}
 document.getElementById('chart-zoom-modal').addEventListener('click',function(e){if(e.target===this)closeChartZoom();});
 document.addEventListener('click',function(e){if(e.target&&e.target.id==='equip-img'){var lb=document.getElementById('lightbox');lb.querySelector('img').src=e.target.src;lb.style.display='flex';}if(e.target&&e.target.id==='lightbox'){e.target.style.display='none';}});
-</script></body></html>
+</script>
+</body></html>

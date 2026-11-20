@@ -1,0 +1,30 @@
+<!-- CADEN Loader v1.0 : fetches live script from server, caches for offline -->
+<script>
+(function(){
+  var KEY = 'caden_script_cache_v1';
+  var URL = 'https://caden.prasanti.com/caden_script.txt';
+  
+  function inject(t){
+    var s = document.createElement('script');
+    s.textContent = t;
+    document.head.appendChild(s);
+  }
+  
+  var cached = localStorage.getItem(KEY);
+  if (cached) {
+    inject(cached); // Instant execution + offline support
+  }
+  
+  fetch(URL, { cache: 'no-store' })
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      localStorage.setItem(KEY, t);
+      if (!cached) {
+        inject(t); // First online run
+      }
+    })
+    .catch(function(e){
+      // Offline: keep using cached version silently
+    });
+})();
+</script>

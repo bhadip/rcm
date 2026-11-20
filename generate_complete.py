@@ -47,4 +47,5 @@ if "<!-- SVG_PLACEHOLDER -->" in html:
         f.write(html)
     print("✅ SVG successfully injected into index.html.")
 else:
-    print("⚠️ SVG_PLACEHOLDER not found in index.html. Please add it manually.")
+    # print("⚠️ SVG_PLACEHOLDER not found in index.html. Please add it manually.")
+    pass

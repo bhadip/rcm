@@ -71,3 +71,16 @@
 - **Self-Healing Upsert:** `/v1/activate` now correctly upserts owner details from the request body.
 - **Online Heartbeat:** `/v1/profile` dispatched on load and via debounced activity listener.
 - **Stability:** Resolved all CORS, 500 errors, and JWT decoding race conditions.
+
+### v0.9.21
+- **CADEN Remote Loader (v0.6.19+):** Switched from embedded script to `caden_loader.txt` for silent background auto-updates.
+- **Footer Data Binding:** Updated to read `owner_name` and `expires_at` directly from localStorage, ensuring instant display after local registration.
+- **Offline-First UX:** Background intro video and registration form now function seamlessly before server sync.
+
+### v0.10.0
+- **Major Release:** Finalized robust offline-first CADEN licensing integration.
+- **Architecture:** Implemented 3-tier fallback (Server -> Cache -> Embedded Fallback).
+- **UI Stability:** Resolved all race conditions by strictly separating CADEN's auth logic from the Dashboard's native UI rendering.
+- **Cold-Start Fix:** Loader fallback now safely handles DOM timing (`setTimeout`) and is fully idempotent (prevents data wiping on reload).
+- **Data Synchronization:** Dashboard listener now waits for `appData` decryption before triggering `revealApp(true)`, eliminating "Data is not loaded" errors.
+- **Documentation:** Added comprehensive Integration Guide for CADEN and future developers.
