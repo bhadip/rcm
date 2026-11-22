@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCM Dashboard User Guide</title>
+<style>
+    body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; overflow: hidden; }
+    .slide-container { width: 100vw; height: 100vh; position: relative; }
+    .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.5s ease; pointer-events: none; padding: 40px; box-sizing: border-box; }
+    .slide.active { opacity: 1; pointer-events: auto; }
+    
+    h1 { font-size: 3rem; color: #3b82f6; margin-bottom: 20px; text-align: center; }
+    h2 { font-size: 2.5rem; color: #3b82f6; margin-bottom: 30px; text-align: center; }
+    p { font-size: 1.5rem; line-height: 1.6; max-width: 900px; text-align: center; color: #cbd5e1; }
+    ul { font-size: 1.4rem; line-height: 1.8; max-width: 900px; text-align: left; color: #cbd5e1; }
+    li { margin-bottom: 15px; }
+    strong { color: #f8fafc; }
+    
+    .mock-ui { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin: 20px 0; width: 80%; max-width: 800px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .highlight { background: rgba(59, 130, 246, 0.2); border: 2px solid #3b82f6; border-radius: 4px; padding: 10px; animation: pulse 2s infinite; }
+    
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+    
+    .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 100; }
+    button { background: #3b82f6; color: white; border: none; padding: 12px 24px; font-size: 1.2rem; border-radius: 6px; cursor: pointer; transition: background 0.3s; }
+    button:hover { background: #2563eb; }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    
+    .slide-number { position: absolute; bottom: 30px; right: 40px; font-size: 1.2rem; color: #64748b; }
+</style>
+</head>
+<body>
+
+<div class="slide-container">
+    <!-- Slide 1: Welcome -->
+    <div class="slide active">
+        <h1>Welcome to RCM Dashboard</h1>
+        <p>Your comprehensive Reliability Centered Maintenance tool.</p>
+        <div class="mock-ui">
+            <p style="font-size: 1.2rem;">🔐 <strong>First Time Setup:</strong> Fill out the registration form to activate your 30-day offline trial.<br>🎬 <strong>Intro Video:</strong> Click "Start" to watch, or "Skip Intro" to jump straight in.</p>
+        </div>
+    </div>
+
+    <!-- Slide 2: System Overview -->
+    <div class="slide">
+        <h2>System Overview</h2>
+        <p>The main dashboard displays your facility's process flow diagram.</p>
+        <div class="mock-ui">
+            <p style="font-size: 1.2rem;">🖱️ <strong>How to Navigate:</strong> Click on any component (e.g., <span class="highlight">ESDV-101</span>, <span class="highlight">V-101</span>) to view its specific failure modes and maintenance data.</p>
+        </div>
+    </div>
+
+    <!-- Slide 3: Component Failure Modes -->
+    <div class="slide">
+        <h2>Component Failure Modes</h2>
+        <p>Drill down into the reliability data for any selected equipment.</p>
+        <div class="mock-ui">
+            <ul>
+                <li>📊 <strong>Failure Mode Table:</strong> View Cause, Category, and Target Reliability R(t).</li>
+                <li>📋 <strong>Task List:</strong> See required maintenance tasks and MTBF (Days).</li>
+                <li>🚦 <strong>Status Indicators:</strong> Color-coded rows show current health (Green/Yellow/Red).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 4: Time-Travel Analysis -->
+    <div class="slide">
+        <h2>Time-Travel Analysis</h2>
+        <p>Simulate equipment degradation over time using the Day Slider.</p>
+        <div class="mock-ui highlight">
+            <p style="font-size: 1.2rem;">🎚️ <strong>Current Day Slider:</strong> Located at the bottom of the screen. Drag the slider from Day 1 to Day 365 to see how failure mode statuses and maintenance requirements change dynamically.</p>
+        </div>
+    </div>
+
+    <!-- Slide 5: Data Management -->
+    <div class="slide">
+        <h2>Data & System Management</h2>
+        <p>Keep your maintenance logs and system data up to date.</p>
+        <div class="mock-ui">
+            <ul>
+                <li>📤 <strong>Top Right Menu:</strong> Export/Import System Logs and Clear Maintenance records.</li>
+                <li>👤 <strong>Footer Info:</strong> View your registered User Name and License Expiry date.</li>
+                <li>⚠️ <strong>Expired License:</strong> The app continues to work, but the footer will blink red.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="prevBtn" onclick="changeSlide(-1)">Previous</button>
+        <button id="nextBtn" onclick="changeSlide(1)">Next</button>
+    </div>
+    <div class="slide-number" id="slideNum">1 / 5</div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const slideNum = document.getElementById('slideNum');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function updateControls() {
+        slideNum.innerText = `${currentSlide + 1} / ${slides.length}`;
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === slides.length - 1;
+    }
+
+    function changeSlide(direction) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide += direction;
+        if (currentSlide < 0) currentSlide = 0;
+        if (currentSlide >= slides.length) currentSlide = slides.length - 1;
+        slides[currentSlide].classList.add('active');
+        updateControls();
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+        if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    updateControls();
+</script>
+
+</body>
+</html>
